@@ -34,7 +34,8 @@ def auto_to_device(model_or_pipeline, attention_slicing=False):
 
     device = auto_device()
     pipe = model_or_pipeline.to(device)
-    if attention_slicing: pipe.enable_attention_slicing();
+    if attention_slicing:
+        pipe.enable_attention_slicing()
     return pipe
 
 
@@ -53,23 +54,25 @@ def auto_generator(seed=None):
     return generator
 
 
-def auto_batch_pipeline_arguments(prompt, inference_steps=1, batch_size=1, deterministic=True):
+def auto_batch_pipeline_arguments(prompt, inference_steps=1, batch_size=1, deterministic=True, guidance_scale=None):
     """
-     Returns a dictionary of pipeline arguments for the installed device.
-     Guidance is disabled, as it is not supported by all models.
+     Returns a dictionary of pipeline arguments for the appropriate installed device.
 
     :param prompt: The prompt to use for the pipeline.
     :param inference_steps: The number of inference steps to use for the pipeline.
     :param batch_size: How many images to generate in parallel.
     :param deterministic: If True, the pipeline will be deterministic and use a fixed seed for the images.
+    :param guidance_scale: The guidance scale to use for the pipeline. If None, default is used.
     :return: A dictionary of pipeline arguments.
     """
 
     pipeline_args = {
         "prompt": [prompt] * batch_size,
         "num_inference_steps": inference_steps,
-        "guidance_scale": 0.0  # Guidance disabled
     }
+
+    if guidance_scale is not None:
+        pipeline_args["guidance_scale"] = guidance_scale
 
     if deterministic:
         pipeline_args["generator"] = [auto_generator(i) for i in range(batch_size)]
