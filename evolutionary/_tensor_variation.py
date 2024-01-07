@@ -3,9 +3,12 @@ Implements ways to perform variation on tensors, such as crossover and mutation.
 """
 
 import torch
+import torch
+from typing import Tuple
 
 
-def uniform_gaussian_mutate_tensor(tensor, mutation_rate=0.05, mutation_strength=0.1, clamp_range=(-1, 1)):
+def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 0.05, mutation_strength: float = 0.1,
+                                   clamp_range: Tuple[float, float] = (-1, 1)) -> torch.Tensor:
     """
     Perform a uniform gaussian mutation on the tensor while keeping it on the same device.
 
@@ -18,25 +21,22 @@ def uniform_gaussian_mutate_tensor(tensor, mutation_rate=0.05, mutation_strength
     Returns:
     - torch.Tensor: The mutated tensor.
     """
-    device = tensor.device  # Get the device of the input tensor
+    device = tensor.device
     num_elements_to_mutate = int(torch.numel(tensor) * mutation_rate)
     indices_to_mutate = torch.randperm(torch.numel(tensor), device=device)[:num_elements_to_mutate]
 
-    # Generate mutations
     mutations = torch.randn(num_elements_to_mutate, device=device) * mutation_strength
     flat_tensor = tensor.flatten()
     flat_tensor[indices_to_mutate] += mutations
     mutated_tensor = flat_tensor.view(tensor.shape)
 
-    # Clamp values to ensure they remain within a reasonable range
     mutated_tensor = torch.clamp(mutated_tensor, min=clamp_range[0], max=clamp_range[1])
 
     return mutated_tensor
 
 
-# Some examples for possible crossover and mutation in prompt encoding space
-
-def uniform_crossover_tensors(tensor1, tensor2, crossover_rate=0.5):
+def uniform_crossover_tensors(tensor1: torch.Tensor, tensor2: torch.Tensor,
+                              crossover_rate: float = 0.5) -> torch.Tensor:
     """
     Perform a uniform crossover operation between two tensors, assuming they are on the same device.
 
@@ -51,16 +51,14 @@ def uniform_crossover_tensors(tensor1, tensor2, crossover_rate=0.5):
     if tensor1.shape != tensor2.shape:
         raise ValueError("Both tensors must have the same shape for crossover.")
 
-    # Create a mask for crossover
     crossover_mask = torch.rand(tensor1.shape, device=tensor1.device) < crossover_rate
-
-    # Perform crossover
     offspring = torch.where(crossover_mask, tensor2, tensor1)
 
     return offspring
 
 
-def arithmetic_crossover(tensor1, tensor2, interpolation_weight=0.5):
+def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
+                         interpolation_weight: float = 0.5) -> torch.Tensor:
     """
     Perform an interpolation-based crossover between two tensors.
 
@@ -76,11 +74,9 @@ def arithmetic_crossover(tensor1, tensor2, interpolation_weight=0.5):
     if tensor1.shape != tensor2.shape:
         raise ValueError("Both tensors must have the same shape for interpolation.")
 
-    # Ensure tensors are on the same device
     device = tensor1.device
     tensor2 = tensor2.to(device)
 
-    # Perform interpolation
     offspring = tensor1 * (1 - interpolation_weight) + tensor2 * interpolation_weight
 
     return offspring
