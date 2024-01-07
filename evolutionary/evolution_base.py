@@ -4,7 +4,7 @@ Crossover and Mutation happens on the argument (A) level, whilst the fitness is 
 SolutionCandidates are created by a SolutionCreator, their representation is split into arguments (A) and result (R).
 """
 
-from typing import Generic, TypeVar, Optional
+from typing import Generic, TypeVar, Optional, List
 from abc import abstractmethod, ABC
 
 A = TypeVar('A')
@@ -56,4 +56,10 @@ class SolutionCandidate(Generic[A, R]):
 class SolutionCreator(Generic[A, R], ABC):
     @abstractmethod
     def create_solution(self, argument: A) -> SolutionCandidate[A, R]:
+        pass
+
+
+class Selector(ABC):
+    @abstractmethod
+    def select(self, candidates: List[SolutionCandidate]) -> SolutionCandidate:
         pass
