@@ -5,8 +5,10 @@
 *.safetensors
 
 # Don't push test image results
-model-evaluation/**/*.png
-!model-evaluation/testimages/*.png
+pre-testing/**/*.png
+!pre-testing/testimages/*.png
+evolution-experiments/results
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
