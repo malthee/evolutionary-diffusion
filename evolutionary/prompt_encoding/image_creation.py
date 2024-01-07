@@ -5,7 +5,7 @@ from evolutionary.image_base import ImageCreator, ImageSolutionData, A
 import torch
 
 
-class PromptEncodingImageCreator(ImageCreator[A], ABC):
+class PromptEmbeddingImageCreator(ImageCreator[A], ABC):
     @abstractmethod
     def arguments_from_prompt(self, prompt: str) -> A:
         """
@@ -14,7 +14,7 @@ class PromptEncodingImageCreator(ImageCreator[A], ABC):
         pass
 
 
-class SDXLPromptEncodingImageCreator(PromptEncodingImageCreator[PooledPromptEmbedData]):
+class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEmbedData]):
     def create_solution(self, argument: PooledPromptEmbedData) \
             -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData]:
         images = self._pipeline(
@@ -79,7 +79,7 @@ class SDXLPromptEncodingImageCreator(PromptEncodingImageCreator[PooledPromptEmbe
         return PooledPromptEmbedData(prompt_embeds, pooled_prompt_embeds)
 
 
-class SDPromptEncodingImageCreator(PromptEncodingImageCreator[PromptEmbedData]):
+class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]):
     def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData]:
         pass
 

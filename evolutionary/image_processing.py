@@ -1,0 +1,109 @@
+from typing import List, Any
+from evolutionary.evolution_base import SolutionCandidate
+from evolutionary.image_base import ImageSolutionData
+from PIL import Image
+from matplotlib import gridspec
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import os
+import re
+import glob
+
+RESULTS_FOLDER = "results"
+
+
+def _parse_fitness_from_filename(filename: str) -> float:
+    match = re.search(r"fitness_([0-9.]+)\.png", filename)
+    return float(match.group(1)) if match else 0
+
+
+def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData]], generation: int) -> None:
+    """
+    Saves images from a given generation of solution candidates.
+
+    Args:
+    - population (List[SolutionCandidate[Any, ImageSolutionData]]): The population of solution candidates.
+    - generation (int): The current generation number.
+    """
+    generation_dir = os.path.join(RESULTS_FOLDER, f"{generation}")
+    os.makedirs(generation_dir, exist_ok=True)
+
+    for index, candidate in enumerate(population):
+        image_solution_data = candidate.result
+        fitness_str = f"{candidate.fitness:.3f}"
+
+        for i, image in enumerate(image_solution_data.images):
+            image_name = f"{index}_{i}_fitness_{fitness_str}.png"
+            image_path = os.path.join(generation_dir, image_name)
+            image.save(image_path)
+
+
+def create_generation_image_grid(generation: int, images_per_row: int = 5, safe_to_folder: bool = True) -> plt.Figure:
+    """
+    Creates a grid of images from a specific generation.
+
+    Args:
+    - generation (int): The generation number for which to create the image grid. Used as the title.
+    - images_per_row (int): Number of images per row in the grid.
+
+    Returns:
+    - plt.Figure: The matplotlib figure object containing the image grid.
+    """
+    generation_dir = os.path.join(RESULTS_FOLDER, f"{generation}")
+
+    # Delete plot if already exists
+    output_filepath = os.path.join(generation_dir, f"grid_{generation}.png")
+    if os.path.exists(output_filepath):
+        os.remove(output_filepath)
+
+    image_files = glob.glob(os.path.join(generation_dir, "*.png"))
+    image_files.sort(key=_parse_fitness_from_filename, reverse=True)
+
+    nrows = (len(image_files) + images_per_row - 1) // images_per_row
+    fig = plt.figure(figsize=(15, 3 * (nrows + 0.5)))  # +1 for the title row
+    gs = gridspec.GridSpec(nrows + 1, images_per_row, figure=fig, height_ratios=[0.5] + [3] * nrows)
+
+    # Title row
+    ax_title = fig.add_subplot(gs[0, :])
+    ax_title.text(0.5, 0.5, f"Generation {generation}", fontsize=20, va='center', ha='center')
+    ax_title.axis('off')
+
+    # Image rows
+    for i, img_file in enumerate(image_files):
+        row = 1 + i // images_per_row  # Start from 1 to leave space for the title
+        col = i % images_per_row
+        ax = fig.add_subplot(gs[row, col])
+        img = mpimg.imread(img_file)
+        ax.imshow(img)
+        ax.axis('off')
+        fitness = _parse_fitness_from_filename(img_file)
+        ax.set_title(f"{fitness:.3f}", fontsize=16)
+
+    plt.tight_layout(pad=1.5)
+    if safe_to_folder:
+        plt.savefig(output_filepath)
+    plt.close(fig)
+    return fig
+
+
+def create_animation_from_generations(num_generations: int, output_file: str = "ga_evolution.gif",
+                                      time_per_frame: int = 1000, time_last_frame: int = 5000) -> None:
+    """
+    First call create_generation_image_grid() for each generation.
+    Creates an animated file from the image grids of multiple generations.
+
+    Args:
+    - num_generations (int): The number of generations to include in the animation. Each one must have a grid image in
+      its folder.
+    - output_file (str): The filename for the saved animation.
+    - time_per_frame (int): Duration for each frame in the animation (milliseconds).
+    - time_last_frame (int): Duration for the last frame in the animation (milliseconds).
+    """
+    frames = []
+    for generation in range(num_generations):
+        generation_path = os.path.join(RESULTS_FOLDER, f"{generation}", f"grid_{generation}.png")
+        frames.append(Image.open(generation_path))
+
+    durations = [time_per_frame] * (len(frames) - 1) + [time_last_frame]
+    frames[0].save(os.path.join(RESULTS_FOLDER, output_file), save_all=True, append_images=frames[1:],
+                   duration=durations, loop=0)
