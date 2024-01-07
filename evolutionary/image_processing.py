@@ -1,13 +1,15 @@
+import warnings
 from typing import List, Any
+from PIL import Image
 from evolutionary.evolution_base import SolutionCandidate
 from evolutionary.image_base import ImageSolutionData
-from PIL import Image
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import os
 import re
 import glob
+import imageio
 
 RESULTS_FOLDER = "results"
 
@@ -86,11 +88,53 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, safe_
     return fig
 
 
-def create_animation_from_generations(num_generations: int, output_file: str = "ga_evolution.gif",
-                                      time_per_frame: int = 1000, time_last_frame: int = 5000) -> None:
+def create_animation_from_generations(num_generations: int, output_file: str = "ga_evolution.mp4",
+                                      time_per_frame: int = 1000, time_last_frame: int = 5000, fps: int = 5) -> str:
+    """
+    Creates an animated MP4 video from the image grids of multiple generations using imageio with ffmpeg.
+
+    Args:
+    - num_generations (int): The number of generations to include in the animation.
+    - output_file (str): The filename for the saved animation (preferably .mp4 for efficiency). Will be put in
+    the RESULTS folder.
+    - time_per_frame (int): Duration for each frame in the animation in milliseconds.
+    - time_last_frame (int): Additional time for the last frame in milliseconds.
+    - fps (int): Frames per second for the animation. Adjust this when using a different time_per_frame.
+    """
+    fps = fps
+
+    output_location = os.path.join(RESULTS_FOLDER, output_file)
+    writer = imageio.get_writer(output_location, fps=fps)
+
+    # Calculate the number of times to append each frame
+    frame_repetitions = time_per_frame // (1000 // fps)
+    last_frame_repetitions = time_last_frame // (1000 // fps)
+
+    last_frame = None
+    for generation in range(num_generations):
+        generation_path = os.path.join(RESULTS_FOLDER, f"{generation}", f"grid_{generation}.png")
+        frame = imageio.imread(generation_path)
+        last_frame = frame
+
+        # Append each frame according to its desired duration
+        for _ in range(frame_repetitions):
+            writer.append_data(frame)
+
+    # Handle the last frame separately if there are any frames
+    if last_frame is not None:
+        for _ in range(last_frame_repetitions):
+            writer.append_data(last_frame)
+
+    writer.close()
+    return output_location
+
+
+def create_animation_from_generations_pil(num_generations: int, output_file: str = "ga_evolution.gif",
+                                          time_per_frame: int = 1000, time_last_frame: int = 5000) -> str:
     """
     First call create_generation_image_grid() for each generation.
     Creates an animated file from the image grids of multiple generations.
+    Fallback when ffmpeg is not available.
 
     Args:
     - num_generations (int): The number of generations to include in the animation. Each one must have a grid image in
@@ -99,11 +143,14 @@ def create_animation_from_generations(num_generations: int, output_file: str = "
     - time_per_frame (int): Duration for each frame in the animation (milliseconds).
     - time_last_frame (int): Duration for the last frame in the animation (milliseconds).
     """
+    output_location = os.path.join(RESULTS_FOLDER, output_file)
+
     frames = []
     for generation in range(num_generations):
         generation_path = os.path.join(RESULTS_FOLDER, f"{generation}", f"grid_{generation}.png")
         frames.append(Image.open(generation_path))
 
     durations = [time_per_frame] * (len(frames) - 1) + [time_last_frame]
-    frames[0].save(os.path.join(RESULTS_FOLDER, output_file), save_all=True, append_images=frames[1:],
+    frames[0].save(output_location, save_all=True, append_images=frames[1:],
                    duration=durations, loop=0)
+    return output_location
