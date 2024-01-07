@@ -63,3 +63,32 @@ class Selector(ABC):
     @abstractmethod
     def select(self, candidates: List[SolutionCandidate]) -> SolutionCandidate:
         pass
+
+
+# TODO algorithm base class with fitness, etc
+class Algorithm(ABC):
+    def __init__(self, num_generations: int):
+        self._num_generations = num_generations
+        self._avg_fitness = None
+        self._worst_fitness = None
+        self._best_fitness = None
+
+    @property
+    def num_generations(self):
+        return self._num_generations
+
+    @property
+    def avg_fitness(self):
+        return self._avg_fitness
+
+    @property
+    def worst_fitness(self):
+        return self._worst_fitness
+
+    @property
+    def best_fitness(self):
+        return self._best_fitness
+
+    @abstractmethod
+    def run(self) -> SolutionCandidate[A, R]:
+        pass

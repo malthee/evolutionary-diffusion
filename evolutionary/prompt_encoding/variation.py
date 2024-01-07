@@ -1,6 +1,6 @@
 from typing import Tuple
 from evolutionary.evolution_base import Mutator, Crossover
-from argument_types import PromptEmbedData, PooledPromptEmbedData
+from evolutionary.prompt_encoding.argument_types import PromptEmbedData, PooledPromptEmbedData
 from evolutionary._tensor_variation import (uniform_crossover_tensors, uniform_gaussian_mutate_tensor,
                                             arithmetic_crossover)
 

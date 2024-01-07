@@ -30,8 +30,8 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
         self._inference_steps = inference_steps
         self._batch_size = batch_size
         self._deterministic = deterministic
-        self._generators = [torch.Generator(device=pipeline.device) if deterministic else
-                            torch.Generator(device=pipeline.device).manual_seed(i) for i in range(batch_size)]
+        self._generators = [torch.Generator(device=pipeline.device).manual_seed(i)
+                            for i in range(batch_size)] if deterministic else None
 
     @abstractmethod
     def create_solution(self, argument: A) -> SolutionCandidate[A, ImageSolutionData]:
