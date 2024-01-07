@@ -9,11 +9,10 @@ This was one of the first experiments. Using a small population size and number 
 start ~7.5 to ~7.8. The video shows the evolution of prompt embeddings.
 
 Prompt: "amazing breathtaking painting weltwunder city landscape famous"  
-Video: 
+Video:   
 
-<video width="600" height="400" controls>
-  <source src="results/breathtaking_painting_city.mp4" type="video/mp4"/>
-</video>
+https://github.com/malthee/evolutionary-diffusion/assets/18032233/a6b58313-79ba-4965-b7e3-15e3e80b479a
+
 
 Arguments: 
 ```python
