@@ -9,14 +9,15 @@ After increasing the population size and starting off with a diverse variety of 
 This score is higher than [the examples from the real LAION English Subset dataset have](http://captions.christoph-schuhmann.de/aesthetic_viz_laion_sac+logos+ava1-l14-linearMSE-en-2.37B.html).
 
 Video and Plot:  
-https://github.com/malthee/evolutionary-diffusion/assets/18032233/e6987422-1a05-4159-854d-8af82ebbcae2
+
+https://github.com/malthee/evolutionary-diffusion/assets/18032233/001feb55-1b21-4327-a528-0e9f5e3455b2
 
 ![Aesthetics Fitness over Time](https://github.com/malthee/evolutionary-diffusion/assets/18032233/6e53e76b-95e6-499a-ab57-5770042c7266)
 
 Arguments:  
 ```python
 population_size = 100
-num_generations = 80
+num_generations = 80 # Only ran 60 because of memory issues
 # Create the necessary components for the genetic algorithm
 creator = SDXLPromptEmbeddingImageCreator(pipeline=pipe, batch_size=1, inference_steps=3)
 evaluator = AestheticsImageEvaluator()  
