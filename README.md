@@ -10,6 +10,7 @@ This score is higher than [the examples from the real LAION English Subset datas
 
 Video and Plot:  
 https://github.com/malthee/evolutionary-diffusion/assets/18032233/e6987422-1a05-4159-854d-8af82ebbcae2
+
 ![Aesthetics Fitness over Time](https://github.com/malthee/evolutionary-diffusion/assets/18032233/6e53e76b-95e6-499a-ab57-5770042c7266)
 
 Arguments:  
