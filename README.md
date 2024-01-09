@@ -4,6 +4,28 @@
 Goals: Augment the process of art generation, improve A-to-I ratio, explore possibilities of combination, optimize and automize.
 
 ## Results 
+### Trying to optimize for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA
+After increasing the population size and starting off with a diverse variety of prompts, the algorithm came to a max Aesthetics score of 8.468.
+This score is higher than [the examples from the real LAION English Subset dataset have](http://captions.christoph-schuhmann.de/aesthetic_viz_laion_sac+logos+ava1-l14-linearMSE-en-2.37B.html).
+
+Video and Plot:  
+https://github.com/malthee/evolutionary-diffusion/assets/18032233/e6987422-1a05-4159-854d-8af82ebbcae2
+![Aesthetics Fitness over Time](https://github.com/malthee/evolutionary-diffusion/assets/18032233/6e53e76b-95e6-499a-ab57-5770042c7266)
+
+Arguments:  
+```python
+population_size = 100
+num_generations = 80
+# Create the necessary components for the genetic algorithm
+creator = SDXLPromptEmbeddingImageCreator(pipeline=pipe, batch_size=1, inference_steps=3)
+evaluator = AestheticsImageEvaluator()  
+crossover = PooledArithmeticCrossover(crossover_rate=0.5, crossover_rate_pooled=0.5)
+mutation_arguments = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=3, clamp_range=(-900, 900))
+mutation_arguments_pooled = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=0.5, clamp_range=(-8, 8))
+mutator = PooledUniformGaussianMutator(mutation_arguments, mutation_arguments_pooled)
+selector = TournamentSelector(tournament_size=3)
+```
+
 ### Simple Genetic Algorithm with SDXL-Turbo 
 This was one of the first experiments. Using a small population size and number of generations, the algorithm was able to optimize the Aesthetic fitness from
 start ~7.5 to ~7.8. The video shows the evolution of prompt embeddings.
