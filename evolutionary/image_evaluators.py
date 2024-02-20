@@ -54,15 +54,15 @@ class AestheticsImageEvaluator(Evaluator[ImageSolutionData]):
 
         self.clip_model, self.preprocess = clip.load(self.CLIP_MODEL_NAME, device=self.device)
 
+    @torch.no_grad()
     def evaluate(self, result: ImageSolutionData) -> float:
         scores = []
         for img in result.images:
             image = self.preprocess(img).unsqueeze(0).to(self.device)
-            with torch.no_grad():
-                image_features = self.clip_model.encode_image(image)
-                im_emb_arr = _normalized(image_features.cpu().detach())
-                prediction = self.model(im_emb_arr.to(self.device))
-                scores.append(prediction.item())
+            image_features = self.clip_model.encode_image(image)
+            im_emb_arr = _normalized(image_features.cpu().detach())
+            prediction = self.model(im_emb_arr.to(self.device))
+            scores.append(prediction.item())
         return np.mean(scores) if scores else 0.0
 
 

@@ -1,5 +1,4 @@
-import warnings
-from typing import List, Any
+from typing import List, Any, Optional
 from PIL import Image
 from evolutionary.evolution_base import SolutionCandidate
 from evolutionary.image_base import ImageSolutionData
@@ -11,6 +10,11 @@ import re
 import glob
 import imageio
 
+"""
+These functions are used to save and visualize images from the solution candidates of an evolutionary algorithm.
+Images are saved in the RESULTS_FOLDER, have their fitness and index in the filename.
+"""
+
 RESULTS_FOLDER = "results"
 
 
@@ -21,7 +25,8 @@ def _parse_fitness_from_filename(filename: str) -> float:
 
 def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData]], generation: int) -> None:
     """
-    Saves images from a given generation of solution candidates.
+    Saves images from a given generation of solution candidates to the RESULTS folder with a sub-folder for
+    the generation.
 
     Args:
     - population (List[SolutionCandidate[Any, ImageSolutionData]]): The population of solution candidates.
@@ -40,13 +45,18 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
             image.save(image_path)
 
 
-def create_generation_image_grid(generation: int, images_per_row: int = 5, safe_to_folder: bool = True) -> plt.Figure:
+def create_generation_image_grid(generation: int, images_per_row: int = 5, max_images: Optional[int] = None,
+                                 safe_to_folder: bool = True) -> plt.Figure:
     """
     Creates a grid of images from a specific generation.
 
     Args:
     - generation (int): The generation number for which to create the image grid. Used as the title.
     - images_per_row (int): Number of images per row in the grid.
+    - max_images (int): Maximum number of images to include in the grid. If None, all images in the generation folder
+    will be included.
+    - safe_to_folder (bool): Whether to save the figure to the generation folder. If False, the figure will only
+    be returned
 
     Returns:
     - plt.Figure: The matplotlib figure object containing the image grid.
@@ -60,6 +70,8 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, safe_
 
     image_files = glob.glob(os.path.join(generation_dir, "*.png"))
     image_files.sort(key=_parse_fitness_from_filename, reverse=True)
+    if max_images is not None:
+        image_files = image_files[:max_images]
 
     nrows = (len(image_files) + images_per_row - 1) // images_per_row
     fig = plt.figure(figsize=(15, 3 * (nrows + 0.5)))  # +1 for the title row

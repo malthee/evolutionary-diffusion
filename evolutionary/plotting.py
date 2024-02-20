@@ -5,10 +5,14 @@ from evolutionary.evolution_base import Algorithm
 
 
 def plot_fitness_statistics(algo: Algorithm, include: List[str] = None, custom_generations: Optional[int] = None):
+    """
+    Plots the fitness statistics of an evolutionary algorithm over generations.
+    Limits the number of generations to custom_generations if specified.
+    By default, includes best, worst and average fitness.
+    """
     if include is None:
         include = ['best', 'worst', 'avg']
-    generations = list(range(0, custom_generations)) if custom_generations else list(range(0, algo.num_generations + 1))
-    # +1 as we account for the last generation
+    generations = list(range(0, custom_generations)) if custom_generations else list(range(0, algo.num_generations))
 
     if 'best' in include:
         plt.plot(generations, algo.best_fitness, label='Best Fitness')
