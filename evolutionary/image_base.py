@@ -1,11 +1,12 @@
 from abc import abstractmethod, ABC
-from typing import List, Callable
+from typing import List, Callable, Any, Generic
 from PIL import Image
 from diffusers import DiffusionPipeline
 from evolutionary.evolution_base import SolutionCreator, SolutionCandidate, A
 import torch
 
 PipelineFactory = Callable[[], DiffusionPipeline]
+"""Factory to allow reinitialization of the pipeline on error."""
 
 
 class ImageSolutionData:
@@ -42,7 +43,7 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
                             for i in range(batch_size)] if deterministic else None
 
     @abstractmethod
-    def create_solution(self, argument: A) -> SolutionCandidate[A, ImageSolutionData]:
+    def create_solution(self, argument: A) -> SolutionCandidate[A, ImageSolutionData, Any]:
         """
         Create an image solution from the given arguments. On error should create a new pipeline and retry once.
         Otherwise, raises the error.

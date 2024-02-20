@@ -1,10 +1,11 @@
 from typing import List, Callable, Generic, Optional
 from evolutionary.evolution_base import (
-    SolutionCandidate, SolutionCreator, Evaluator, Mutator, Crossover, Selector, A, R, Algorithm
+    SolutionCandidate, SolutionCreator, Evaluator, Mutator, Crossover, Selector, A, R, Algorithm,
+    SingleObjectiveEvaluator, SingleObjectiveFitness
 )
 
 
-class GeneticAlgorithm(Algorithm[A, R]):
+class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
     def __init__(self,
                  num_generations: int,
                  population_size: int,
@@ -12,7 +13,7 @@ class GeneticAlgorithm(Algorithm[A, R]):
                  selector: Selector,
                  mutator: Mutator[A],
                  crossover: Crossover[A],
-                 evaluator: Evaluator[R],
+                 evaluator: SingleObjectiveEvaluator[R],
                  initial_arguments: List[A],
                  post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
                  elitism_count: Optional[int] = None):
@@ -29,7 +30,7 @@ class GeneticAlgorithm(Algorithm[A, R]):
         )
         self.elitism_count = elitism_count
 
-    def _run_algorithm(self) -> SolutionCandidate[A, R]:
+    def _run_algorithm(self) -> SolutionCandidate[A, R, SingleObjectiveFitness]:
         for generation in range(self.num_generations):
             print(f"Generation {generation} started.")
             self._evaluate_population(generation)

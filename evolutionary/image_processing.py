@@ -1,6 +1,6 @@
 from typing import List, Any, Optional
 from PIL import Image
-from evolutionary.evolution_base import SolutionCandidate
+from evolutionary.evolution_base import SolutionCandidate, Fitness, SingleObjectiveFitness
 from evolutionary.image_base import ImageSolutionData
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
@@ -23,7 +23,7 @@ def _parse_fitness_from_filename(filename: str) -> float:
     return float(match.group(1)) if match else 0
 
 
-def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData]], generation: int) -> None:
+def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, SingleObjectiveFitness]], generation: int) -> None:
     """
     Saves images from a given generation of solution candidates to the RESULTS folder with a sub-folder for
     the generation.

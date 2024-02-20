@@ -4,7 +4,7 @@ import torch.nn as nn
 import numpy as np
 import clip
 from typing import Union, Tuple
-from evolutionary.evolution_base import Evaluator
+from evolutionary.evolution_base import Evaluator, SingleObjectiveEvaluator
 from evolutionary.image_base import ImageSolutionData
 from model_helpers.auto_device import auto_clip_device, load_torch_model
 
@@ -18,7 +18,7 @@ def _normalized(a, axis=-1, order=2):
     return a / np.expand_dims(l2, axis)
 
 
-class AestheticsImageEvaluator(Evaluator[ImageSolutionData]):
+class AestheticsImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
     DEFAULT_MODEL_PATH = "./models/sac+logos+ava1-l14-linearMSE.pth"
     MODEL_URL = ("https://github.com/christophschuhmann/improved-aesthetic-predictor/raw/main/sac+logos+ava1-l14"
                  "-linearMSE.pth")
@@ -66,13 +66,13 @@ class AestheticsImageEvaluator(Evaluator[ImageSolutionData]):
         return np.mean(scores) if scores else 0.0
 
 
-class AIDetectionImageEvaluator(Evaluator[ImageSolutionData]):
+class AIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
     def evaluate(self, result: ImageSolutionData) -> float:
         # Implement specific logic
         pass
 
 
-class CLIPScoreEvaluator(Evaluator[ImageSolutionData]):
+class CLIPScoreEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
     def __init__(self, prompt: str):
         self.prompt = prompt
 
@@ -81,7 +81,7 @@ class CLIPScoreEvaluator(Evaluator[ImageSolutionData]):
         pass
 
 
-class CLIPIQAEvaluator(Evaluator[ImageSolutionData]):
+class CLIPIQAEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
     def __init__(self, metric: Union[str, Tuple[str, str]]):
         self.metric = metric
 
