@@ -124,14 +124,17 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         """
         fitness_values = [candidate.fitness for candidate in self._population]
 
-        if Fitness is SingleObjectiveFitness:
+        # Check if multi-objective based on the first sample
+        if isinstance(fitness_values[0], list):
+            zipped_fitness = list(zip(*fitness_values))
+            # Track each objective separately
+            self._best_fitness.append([max(obj_values) for obj_values in zipped_fitness])
+            self._worst_fitness.append([min(obj_values) for obj_values in zipped_fitness])
+            self._avg_fitness.append([sum(obj_values) / len(obj_values) for obj_values in zipped_fitness])
+        else:
             self._best_fitness.append(max(fitness_values))
             self._worst_fitness.append(min(fitness_values))
             self._avg_fitness.append(sum(fitness_values) / len(fitness_values))
-        elif Fitness is MultiObjectiveFitness:
-            self._best_fitness.append([max(fitness) for fitness in zip(*fitness_values)])
-            self._worst_fitness.append([min(fitness) for fitness in zip(*fitness_values)])
-            self._avg_fitness.append([sum(fitness) / len(fitness) for fitness in zip(*fitness_values)])
 
     def _evaluate_population(self, generation: int) -> None:
         """
