@@ -10,7 +10,7 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
                  num_generations: int,
                  population_size: int,
                  solution_creator: SolutionCreator[A, R],
-                 selector: Selector,
+                 selector: Selector[SingleObjectiveFitness],
                  mutator: Mutator[A],
                  crossover: Crossover[A],
                  evaluator: SingleObjectiveEvaluator[R],

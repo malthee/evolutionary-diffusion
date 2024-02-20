@@ -1,14 +1,17 @@
-from typing import List, Optional
+from typing import List, Optional, Any
 import matplotlib.pyplot as plt
 
-from evolutionary.evolution_base import Algorithm
+from evolutionary.evolution_base import Algorithm, SingleObjectiveFitness
 
 
-def plot_fitness_statistics(algo: Algorithm, include: List[str] = None, custom_generations: Optional[int] = None):
+def plot_fitness_statistics(algo: Algorithm[Any, Any, SingleObjectiveFitness],
+                            include: List[str] = None,
+                            custom_generations: Optional[int] = None):
     """
     Plots the fitness statistics of an evolutionary algorithm over generations.
     Limits the number of generations to custom_generations if specified.
     By default, includes best, worst and average fitness.
+    Only supports single-objective optimization.
     """
     if include is None:
         include = ['best', 'worst', 'avg']
