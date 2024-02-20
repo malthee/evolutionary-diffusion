@@ -4,6 +4,7 @@ Crossover and Mutation happens on the argument (A) level, whilst the fitness is 
 SolutionCandidates are created by a SolutionCreator, their representation is split into arguments (A) and result (R).
 The fitness type is generic and can be either a single value or a sequence of values in case of multi-objective
 optimization.
+By default, uses maximization of fitness values, to minimize a fitness value, use the negative value.
 """
 from random import randint
 from typing import Generic, TypeVar, Optional, List, Callable, Sequence, Any
@@ -59,15 +60,7 @@ class SolutionCandidate(Generic[A, R, Fitness]):
     def __init__(self, arguments: A, result: R):
         self._arguments = arguments
         self._result = result
-        self._fitness: Optional[Fitness] = None
-
-    @property
-    def fitness(self) -> Optional[Fitness]:
-        return self._fitness
-
-    @fitness.setter
-    def fitness(self, value: Optional[Fitness]):
-        self._fitness = value
+        self.fitness: Optional[Fitness] = None
 
     @property
     def arguments(self) -> A:
@@ -126,6 +119,8 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
     def __calculate_fitness_statistics(self) -> None:
         """
         Calculates the average, worst and best fitness of the current population.
+        For single-objective optimization, the fitness values are single values.
+        For multi-objective optimization, the fitness values are sequences of values for each criteria.
         """
         fitness_values = [candidate.fitness for candidate in self._population]
 
@@ -141,7 +136,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
     def _evaluate_population(self, generation: int) -> None:
         """
         Evaluates and sets the fitness of all candidates in the population.
-        Tracks statistics and calls the post evaluation callback if set.
+        Tracks statistics and calls the post evaluation callback if set. Works with any fitness type.
         """
         for candidate in self._population:
             candidate.fitness = self._evaluator.evaluate(candidate.result)
