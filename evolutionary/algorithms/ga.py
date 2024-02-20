@@ -1,90 +1,58 @@
-from random import randint
 from typing import List, Callable, Generic, Optional
 from evolutionary.evolution_base import (
-    SolutionCandidate, SolutionCreator, Evaluator, Mutator, Crossover, Selector, A, R
+    SolutionCandidate, SolutionCreator, Evaluator, Mutator, Crossover, Selector, A, R, Algorithm
 )
 
 
-class GeneticAlgorithm(Generic[A, R]):
+class GeneticAlgorithm(Algorithm[A, R]):
     def __init__(self,
+                 num_generations: int,
+                 population_size: int,
                  solution_creator: SolutionCreator[A, R],
-                 evaluator: Evaluator[R],
+                 selector: Selector,
                  mutator: Mutator[A],
                  crossover: Crossover[A],
-                 selector: Selector,
-                 population_size: int,
-                 num_generations: int,
+                 evaluator: Evaluator[R],
                  initial_arguments: List[A],
-                 elitism_count: Optional[int] = None,
-                 post_evaluation_callback: Optional[Callable[[List[SolutionCandidate[A, R]], int], None]] = None):
-        self.best_fitness = None
-        self.worst_fitness = None
-        self.avg_fitness = None
-        self.solution_creator = solution_creator
-        self.evaluator = evaluator
-        self.mutator = mutator
-        self.crossover = crossover
-        self.selector = selector
-        self.population_size = population_size
-        self.num_generations = num_generations
-        self.initial_arguments = initial_arguments
+                 post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
+                 elitism_count: Optional[int] = None):
+        super().__init__(
+            num_generations=num_generations,
+            population_size=population_size,
+            solution_creator=solution_creator,
+            selector=selector,
+            mutator=mutator,
+            crossover=crossover,
+            evaluator=evaluator,
+            initial_arguments=initial_arguments,
+            post_evaluation_callback=post_evaluation_callback
+        )
         self.elitism_count = elitism_count
-        self.post_evaluation_callback = post_evaluation_callback
 
-    def _create_initial_population(self) -> List[SolutionCandidate[A, R]]:
-        population = []
-        for arg in self.initial_arguments:
-            population.append(self.solution_creator.create_solution(arg))
-
-        # If there are not enough initial arguments, fill the rest with random choices
-        while len(population) < self.population_size:
-            population.append(self.solution_creator.create_solution(self.initial_arguments[
-                                                                        randint(0, len(self.initial_arguments) - 1)]))
-
-        return population
-
-    def _evaluate_population(self, population: List[SolutionCandidate[A, R]]) -> None:
-        for candidate in population:
-            candidate.fitness = self.evaluator.evaluate(candidate.result)
-
-    def _calculate_fitness_statistics(self, population: List[SolutionCandidate[A, R]]):
-        fitness_values = [candidate.fitness for candidate in population]
-        self.best_fitness.append(max(fitness_values))
-        self.worst_fitness.append(min(fitness_values))
-        self.avg_fitness.append(sum(fitness_values) / len(fitness_values))
-
-    def run(self) -> SolutionCandidate[A, R]:
-        # Initialize lists to store fitness statistics
-        self.best_fitness = []
-        self.worst_fitness = []
-        self.avg_fitness = []
-
-        population = self._create_initial_population()
+    def _run_algorithm(self) -> SolutionCandidate[A, R]:
         for generation in range(self.num_generations):
-            self._evaluate_population(population)
-            self._calculate_fitness_statistics(population)
-            if self.post_evaluation_callback:
-                self.post_evaluation_callback(population, generation)
+            print(f"Generation {generation} started.")
+            self._evaluate_population(generation)
+
+            # If this is the last generation, finish here
+            if generation == self.num_generations - 1:
+                break
 
             # Elitism: Carry over the top individuals if enabled
-            elites = sorted(population, key=lambda candidate: candidate.fitness, reverse=True)[:self.elitism_count] \
+            elites = sorted(self._population, key=lambda candidate: candidate.fitness, reverse=True)[:self.elitism_count] \
                 if self.elitism_count else []
 
             new_population = elites.copy()
-            while len(new_population) < self.population_size:
-                parent1 = self.selector.select(population)
-                parent2 = self.selector.select(population)
-                offspring_args = self.crossover.crossover(parent1.arguments, parent2.arguments)
-                offspring_args = self.mutator.mutate(offspring_args)
-                new_population.append(self.solution_creator.create_solution(offspring_args))
+            while len(new_population) < self._population_size:
+                parent1 = self._selector.select(self._population)
+                parent2 = self._selector.select(self._population)
+                offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
+                offspring_args = self._mutator.mutate(offspring_args)
+                offspring = self._solution_creator.create_solution(offspring_args)
+                new_population.append(offspring)
 
-            population = new_population
-            print(f"Generation {generation + 1} complete.")
+            # Test freeing up
+            del self._population
+            self._population = new_population
 
-        # Final evaluation and statistics
-        self._evaluate_population(population)
-        self._calculate_fitness_statistics(population)
-        if self.post_evaluation_callback:
-            self.post_evaluation_callback(population, self.num_generations)
-
-        return max(population, key=lambda candidate: candidate.fitness)
+        return max(self._population, key=lambda candidate: candidate.fitness)

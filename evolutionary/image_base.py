@@ -1,9 +1,11 @@
 from abc import abstractmethod, ABC
-from typing import List
+from typing import List, Callable
 from PIL import Image
 from diffusers import DiffusionPipeline
 from evolutionary.evolution_base import SolutionCreator, SolutionCandidate, A
 import torch
+
+PipelineFactory = Callable[[], DiffusionPipeline]
 
 
 class ImageSolutionData:
@@ -18,21 +20,31 @@ class ImageSolutionData:
 class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
     """Base class for image creators. Image creators create image solutions from arguments."""
 
-    def __init__(self, pipeline: DiffusionPipeline, inference_steps: int, batch_size: int, deterministic: bool = True):
+    def __init__(self, pipeline_factory: PipelineFactory,
+                 inference_steps: int,
+                 batch_size: int,
+                 deterministic: bool = True):
         """
-        :param pipeline: The diffusion pipeline to use for image generation.
-        :param inference_steps: The number of inference steps to perform.
-        :param batch_size: The batch size (number of images per prompt).
+        :param pipeline_factory: The diffusion pipeline factory is called once at the start
+         and reinitialized on error as a fallback mechanism.
+        :param inference_steps: The number of inference steps to perform. Directly affects quality.
+        :param batch_size: The batch size (number of images per prompt). Affects evaluation - averages out
+        evolution across multiple images.
         :param deterministic: Whether to use a deterministic seed for the diffusion process, recommended for
         evolutionary exploration.
         """
-        self._pipeline = pipeline
+        self._pipeline_factory = pipeline_factory
+        self._pipeline = pipeline_factory()
         self._inference_steps = inference_steps
         self._batch_size = batch_size
         self._deterministic = deterministic
-        self._generators = [torch.Generator(device=pipeline.device).manual_seed(i)
+        self._generators = [torch.Generator(device=self._pipeline.device).manual_seed(i)
                             for i in range(batch_size)] if deterministic else None
 
     @abstractmethod
     def create_solution(self, argument: A) -> SolutionCandidate[A, ImageSolutionData]:
+        """
+        Create an image solution from the given arguments. On error should create a new pipeline and retry once.
+        Otherwise, raises the error.
+        """
         pass
