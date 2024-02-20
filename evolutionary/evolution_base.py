@@ -2,20 +2,45 @@
 Base classes for evolutionary computation in a generational environment.
 Crossover and Mutation happens on the argument (A) level, whilst the fitness is evaluated on the result (R) level.
 SolutionCandidates are created by a SolutionCreator, their representation is split into arguments (A) and result (R).
+The fitness type is generic and can be either a single value or a sequence of values in case of multi-objective
+optimization.
 """
 from random import randint
-from typing import Generic, TypeVar, Optional, List, Callable
+from typing import Generic, TypeVar, Optional, List, Callable, Sequence, Any
 from abc import abstractmethod, ABC
 
 A = TypeVar('A')
 R = TypeVar('R')
 R_covariant = TypeVar('R_covariant', covariant=True)
+SingleObjectiveFitness = float
+MultiObjectiveFitness = Sequence[float]
+Fitness = TypeVar('Fitness', SingleObjectiveFitness, MultiObjectiveFitness)
+"""
+Fitness may be a single value or a sequence of values in case of multi-objective optimization.
+"""
 
 
-class Evaluator(Generic[R_covariant], ABC):
+class Evaluator(Generic[R_covariant, Fitness], ABC):
     @abstractmethod
-    def evaluate(self, result: R_covariant) -> float:
+    def evaluate(self, result: R_covariant) -> Fitness:
         pass
+
+
+class SingleObjectiveEvaluator(Evaluator[R_covariant, SingleObjectiveFitness], ABC):
+    @abstractmethod
+    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+        pass
+
+
+class MultiObjectiveEvaluator(Evaluator[R_covariant, MultiObjectiveFitness]):
+    def __init__(self, evaluators: Sequence[SingleObjectiveEvaluator[R_covariant]]):
+        """
+        Initializes the multi-objective evaluator with a list of single-objective evaluators.
+        """
+        self.evaluators = evaluators
+
+    def evaluate(self, result: R_covariant) -> MultiObjectiveFitness:
+        return [evaluator.evaluate(result) for evaluator in self.evaluators]
 
 
 class Mutator(Generic[A], ABC):
@@ -30,18 +55,18 @@ class Crossover(Generic[A], ABC):
         pass
 
 
-class SolutionCandidate(Generic[A, R]):
+class SolutionCandidate(Generic[A, R, Fitness]):
     def __init__(self, arguments: A, result: R):
         self._arguments = arguments
         self._result = result
-        self._fitness: Optional[float] = None
+        self._fitness: Optional[Fitness] = None
 
     @property
-    def fitness(self) -> Optional[float]:
+    def fitness(self) -> Optional[Fitness]:
         return self._fitness
 
     @fitness.setter
-    def fitness(self, value: Optional[float]):
+    def fitness(self, value: Optional[Fitness]):
         self._fitness = value
 
     @property
@@ -55,33 +80,33 @@ class SolutionCandidate(Generic[A, R]):
 
 class SolutionCreator(Generic[A, R], ABC):
     @abstractmethod
-    def create_solution(self, argument: A) -> SolutionCandidate[A, R]:
+    def create_solution(self, argument: A) -> SolutionCandidate[A, R, Any]:
         pass
 
 
-class Selector(ABC):
+class Selector(Generic[Fitness], ABC):
     @abstractmethod
-    def select(self, candidates: List[SolutionCandidate]) -> SolutionCandidate:
+    def select(self, candidates: List[SolutionCandidate[Any, Any, Fitness]]) -> SolutionCandidate[Any, Any, Fitness]:
         pass
 
 
-class Algorithm(ABC, Generic[A, R]):
+class Algorithm(ABC, Generic[A, R, Fitness]):
     """
     Base class for evolutionary algorithms.
     """
 
+    GenerationCallback = Callable[[int, 'Algorithm[A, R, Fitness]'], None]
     """Callback for a generation event. The first argument is the current generation."""
-    GenerationCallback = Callable[[int, 'Algorithm[A, R]'], None]
-
-    FitnessList = List[float]
+    FitnessList = List[Fitness]
+    """Either a list of single fitness values or a list of lists for multi-objective optimization."""
 
     def __init__(self, num_generations: int,
                  population_size: int,
                  solution_creator: SolutionCreator[A, R],
-                 selector: Selector,
+                 selector: Selector[Fitness],
                  mutator: Mutator[A],
                  crossover: Crossover[A],
-                 evaluator: Evaluator[R],
+                 evaluator: Evaluator[R, Fitness],
                  initial_arguments: List[A],
                  post_evaluation_callback: Optional[GenerationCallback] = None):
         self._num_generations = num_generations
@@ -96,16 +121,22 @@ class Algorithm(ABC, Generic[A, R]):
         self._avg_fitness: Algorithm.FitnessList = []
         self._worst_fitness: Algorithm.FitnessList = []
         self._best_fitness: Algorithm.FitnessList = []
-        self._population: List[SolutionCandidate[A, R]] = []
+        self._population: List[SolutionCandidate[A, R, Fitness]] = []
 
     def __calculate_fitness_statistics(self) -> None:
         """
         Calculates the average, worst and best fitness of the current population.
         """
         fitness_values = [candidate.fitness for candidate in self._population]
-        self._best_fitness.append(max(fitness_values))
-        self._worst_fitness.append(min(fitness_values))
-        self._avg_fitness.append(sum(fitness_values) / len(fitness_values))
+
+        if Fitness is SingleObjectiveFitness:
+            self._best_fitness.append(max(fitness_values))
+            self._worst_fitness.append(min(fitness_values))
+            self._avg_fitness.append(sum(fitness_values) / len(fitness_values))
+        elif Fitness is MultiObjectiveFitness:
+            self._best_fitness.append([max(fitness) for fitness in zip(*fitness_values)])
+            self._worst_fitness.append([min(fitness) for fitness in zip(*fitness_values)])
+            self._avg_fitness.append([sum(fitness) / len(fitness) for fitness in zip(*fitness_values)])
 
     def _evaluate_population(self, generation: int) -> None:
         """
@@ -120,7 +151,7 @@ class Algorithm(ABC, Generic[A, R]):
 
         self.__calculate_fitness_statistics()
 
-    def _create_initial_population(self) -> List[SolutionCandidate[A, R]]:
+    def _create_initial_population(self) -> List[SolutionCandidate[A, R, Fitness]]:
         """
         Initializes the population controlled by initial arguments through the solution creator.
         If not enough initial arguments are given, the rest of the population is filled with random choices.
@@ -134,7 +165,6 @@ class Algorithm(ABC, Generic[A, R]):
             self._population.append(self._solution_creator.create_solution(self._initial_arguments[
                                                                                randint(0,
                                                                                        len(self._initial_arguments) - 1)]))
-
         return self._population
 
     @property
@@ -158,13 +188,13 @@ class Algorithm(ABC, Generic[A, R]):
         return self._population
 
     @abstractmethod
-    def _run_algorithm(self) -> SolutionCandidate[A, R]:
+    def _run_algorithm(self) -> SolutionCandidate[A, R, Fitness]:
         """
         Inner method to run the algorithm. Must be implemented by subclasses.
         """
         pass
 
-    def run(self) -> SolutionCandidate[A, R]:
+    def run(self) -> SolutionCandidate[A, R, Fitness]:
         """
         Runs the algorithm for the specified number of generations and returns the best solution candidate.
         TODO evaluate if can also call the loop?

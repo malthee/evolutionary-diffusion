@@ -1,9 +1,9 @@
 import random
 from typing import List
-from evolutionary.evolution_base import SolutionCandidate, Selector
+from evolutionary.evolution_base import SolutionCandidate, Selector, SingleObjectiveFitness
 
 
-class TournamentSelector(Selector):
+class TournamentSelector(Selector[SingleObjectiveFitness]):
     def __init__(self, tournament_size: int):
         """
         Tournament selection: Selects the best individual from a random subset of the population.
@@ -18,7 +18,7 @@ class TournamentSelector(Selector):
         return winner
 
 
-class RankSelector(Selector):
+class RankSelector(Selector[SingleObjectiveFitness]):
     def __init__(self, selection_pressure: float = 1.5):
         """
         Rank selection: Selects individuals based on ranking with specified selection pressure.
@@ -36,7 +36,7 @@ class RankSelector(Selector):
         return candidates[chosen_index]
 
 
-class RouletteWheelSelector(Selector):
+class RouletteWheelSelector(Selector[SingleObjectiveFitness]):
     """
     Roulette Wheel selection: Selects individuals based on fitness proportionate probabilities.
     """

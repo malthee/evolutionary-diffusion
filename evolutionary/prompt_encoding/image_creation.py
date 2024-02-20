@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from typing import Any, Generic
+
 from evolutionary.prompt_encoding.argument_types import PooledPromptEmbedData, PromptEmbedData
 from evolutionary.evolution_base import SolutionCandidate
 from evolutionary.image_base import ImageCreator, ImageSolutionData, A
@@ -17,7 +19,7 @@ class PromptEmbeddingImageCreator(ImageCreator[A], ABC):
 
 class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEmbedData]):
     def create_solution(self, argument: PooledPromptEmbedData) \
-            -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData]:
+            -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData, Any]:
         try:
             images = self._pipeline(
                 prompt_embeds=argument.prompt_embeds,
@@ -96,7 +98,7 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
 
 
 class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]):
-    def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData]:
+    def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData, Any]:
         pass  # TODO
 
     @torch.no_grad()
