@@ -47,7 +47,7 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
             initial_arguments=initial_arguments,
             post_evaluation_callback=post_evaluation_callback
         )
-        # Normalize objective values so they contribute equally to crowding distance calculation.
+        # Normalize objective values, so they contribute equally to crowding distance calculation.
         self._normalize_crowding_distance = normalize_crowding_distance
         self._population: List[NSGASolutionCandidate] = []  # Override the type to NSGA-II's solution candidate
         self._fronts = [[]]
