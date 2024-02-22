@@ -3,53 +3,35 @@
 
 Goals: Augment the process of art generation, improve A-to-I ratio, explore possibilities of combination, optimize and automize.
 
-## Results 
-### Trying to optimize for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA
-After increasing the population size and starting off with a diverse variety of prompts, the algorithm came to a max Aesthetics score of 8.468.
+## Example - Creating the most Aesthetic Image
+### Optimizing for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA and SDXL-Turbo
+Optimizing the aesthetics predictor as a maximization problem, the algorithm came to a max Aesthetics score of **8.67**.
 This score is higher than [the examples from the real LAION English Subset dataset have](http://captions.christoph-schuhmann.de/aesthetic_viz_laion_sac+logos+ava1-l14-linearMSE-en-2.37B.html).
+A wide variety of prompts (inspired by parti prompts) was used for the initial population.
 
-Video and Plot:  
+https://github.com/malthee/evolutionary-diffusion-results/assets/18032233/4841d671-639a-4ac4-b7a8-ee5a66fab28d
 
-https://github.com/malthee/evolutionary-diffusion/assets/18032233/001feb55-1b21-4327-a528-0e9f5e3455b2
+![Ga200Gen100PopFitnessChartAesthetics](https://github.com/malthee/evolutionary-diffusion-results/blob/main/aesthetics/ga_200gen_100pop_aesthetic.png)
 
-![Aesthetics Fitness over Time](https://github.com/malthee/evolutionary-diffusion/assets/18032233/6e53e76b-95e6-499a-ab57-5770042c7266)
-
-Arguments:  
+Parameters: 
 ```python
 population_size = 100
-num_generations = 80 # Only ran 60 because of memory issues
-# Create the necessary components for the genetic algorithm
-creator = SDXLPromptEmbeddingImageCreator(pipeline=pipe, batch_size=1, inference_steps=3)
+num_generations = 200
+batch_size = 1
+elitism = 1
+
+creator = SDXLPromptEmbeddingImageCreator(pipeline_factory=setup_pipeline, batch_size=batch_size, inference_steps=3)
 evaluator = AestheticsImageEvaluator()  
 crossover = PooledArithmeticCrossover(crossover_rate=0.5, crossover_rate_pooled=0.5)
-mutation_arguments = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=3, clamp_range=(-900, 900))
-mutation_arguments_pooled = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=0.5, clamp_range=(-8, 8))
+mutation_arguments = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=2, clamp_range=(-900, 900)) 
+mutation_arguments_pooled = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=0.3, clamp_range=(-8, 8))
 mutator = PooledUniformGaussianMutator(mutation_arguments, mutation_arguments_pooled)
 selector = TournamentSelector(tournament_size=3)
 ```
 
-### Simple Genetic Algorithm with SDXL-Turbo 
-This was one of the first experiments. Using a small population size and number of generations, the algorithm was able to optimize the Aesthetic fitness from
-start ~7.5 to ~7.8. The video shows the evolution of prompt embeddings.
-
-Prompt: "amazing breathtaking painting weltwunder city landscape famous"  
-Video:   
-
-https://github.com/malthee/evolutionary-diffusion/assets/18032233/a6b58313-79ba-4965-b7e3-15e3e80b479a
-
-
-Arguments: 
-```python
-population_size = 10
-num_generations = 30 
-creator = SDXLPromptEmbeddingImageCreator(pipeline=pipe, batch_size=1, inference_steps=3)
-evaluator = AestheticsImageEvaluator()  
-crossover = PooledArithmeticCrossover(crossover_rate=0.5, crossover_rate_pooled=0.5)
-mutation_arguments = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=3, clamp_range=(-900, 900))
-mutation_arguments_pooled = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=0.5, clamp_range=(-8, 8))
-mutator = PooledUniformGaussianMutator(mutation_arguments, mutation_arguments_pooled)
-selector = TournamentSelector(tournament_size=3)
-```
+## Detailed Results and Notebooks
+More detailed results can be found in a separate repository dedicated to the results of the experiments:
+https://github.com/malthee/evolutionary-diffusion-results
 
 ## Installation & Environment
 SOON Collab-Compatible!  
