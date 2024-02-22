@@ -1,6 +1,6 @@
 from typing import List, Any, Optional
 from PIL import Image
-from evolutionary.evolution_base import SolutionCandidate, Fitness, SingleObjectiveFitness
+from evolutionary.evolution_base import SolutionCandidate, SingleObjectiveFitness
 from evolutionary.image_base import ImageSolutionData
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
@@ -13,6 +13,7 @@ import imageio
 """
 These functions are used to save and visualize images from the solution candidates of an evolutionary algorithm.
 Images are saved in the RESULTS_FOLDER, have their fitness and index in the filename.
+TODO this has to be adjusted for multi-objective handling
 """
 
 RESULTS_FOLDER = "results"
@@ -23,7 +24,8 @@ def parse_fitness_from_filename(filename: str) -> float:
     return float(match.group(1)) if match else 0
 
 
-def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, SingleObjectiveFitness]], generation: int) -> None:
+def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, SingleObjectiveFitness]],
+                                generation: int) -> None:
     """
     Saves images from a given generation of solution candidates to the RESULTS folder with a sub-folder for
     the generation.
@@ -69,7 +71,7 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
         os.remove(output_filepath)
 
     image_files = glob.glob(os.path.join(generation_dir, "*.png"))
-    image_files.sort(key=_parse_fitness_from_filename, reverse=True)
+    image_files.sort(key=parse_fitness_from_filename, reverse=True)
     if max_images is not None:
         image_files = image_files[:max_images]
 
@@ -90,7 +92,7 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
         img = mpimg.imread(img_file)
         ax.imshow(img)
         ax.axis('off')
-        fitness = _parse_fitness_from_filename(img_file)
+        fitness = parse_fitness_from_filename(img_file)
         ax.set_title(f"{fitness:.3f}", fontsize=16)
 
     plt.tight_layout(pad=1.5)
@@ -125,7 +127,7 @@ def create_animation_from_generations(num_generations: int, output_file: str = "
     last_frame = None
     for generation in range(num_generations):
         generation_path = os.path.join(RESULTS_FOLDER, f"{generation}", f"grid_{generation}.png")
-        frame = imageio.imread(generation_path)
+        frame = imageio.v2.imread(generation_path)
         last_frame = frame
 
         # Append each frame according to its desired duration
