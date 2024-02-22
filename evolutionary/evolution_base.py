@@ -24,6 +24,9 @@ Fitness may be a single value or a sequence of values in case of multi-objective
 class Evaluator(Generic[R_covariant, Fitness], ABC):
     @abstractmethod
     def evaluate(self, result: R_covariant) -> Fitness:
+        """
+        Evaluates the fitness of a result, higher is better (maximization).
+        """
         pass
 
 
@@ -38,10 +41,22 @@ class MultiObjectiveEvaluator(Evaluator[R_covariant, MultiObjectiveFitness]):
         """
         Initializes the multi-objective evaluator with a list of single-objective evaluators.
         """
-        self.evaluators = evaluators
+        self._evaluators = evaluators
 
     def evaluate(self, result: R_covariant) -> MultiObjectiveFitness:
-        return [evaluator.evaluate(result) for evaluator in self.evaluators]
+        return [evaluator.evaluate(result) for evaluator in self._evaluators]
+
+
+class InverseEvaluator(SingleObjectiveEvaluator):
+    """
+    Inverts the fitness value of a single-objective evaluator.
+    Used to minimize instead of maximize, as by default evaluators are meant to maximize.
+    """
+    def __init__(self, evaluator: SingleObjectiveEvaluator[R_covariant]):
+        self._evaluator = evaluator
+
+    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+        return -self._evaluator.evaluate(result)
 
 
 class Mutator(Generic[A], ABC):
@@ -120,7 +135,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         """
         Calculates the average, worst and best fitness of the current population.
         For single-objective optimization, the fitness values are single values.
-        For multi-objective optimization, the fitness values are sequences of values for each criteria.
+        For multi-objective optimization, the fitness values are sequences of values for each criterion.
         """
         fitness_values = [candidate.fitness for candidate in self._population]
 
@@ -131,7 +146,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
             self._best_fitness.append([max(obj_values) for obj_values in zipped_fitness])
             self._worst_fitness.append([min(obj_values) for obj_values in zipped_fitness])
             self._avg_fitness.append([sum(obj_values) / len(obj_values) for obj_values in zipped_fitness])
-        else:
+        else:  # Single-objective
             self._best_fitness.append(max(fitness_values))
             self._worst_fitness.append(min(fitness_values))
             self._avg_fitness.append(sum(fitness_values) / len(fitness_values))
@@ -160,9 +175,9 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
 
         # If there are not enough initial arguments, fill the rest with random choices
         while len(self._population) < self._population_size:
-            self._population.append(self._solution_creator.create_solution(self._initial_arguments[
-                                                                               randint(0,
-                                                                                       len(self._initial_arguments) - 1)]))
+            self._population.append(self._solution_creator.create_solution(
+                self._initial_arguments[randint(0, len(self._initial_arguments) - 1)])
+            )
         return self._population
 
     @property

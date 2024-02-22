@@ -19,7 +19,7 @@ RESULTS_FOLDER = "results"
 
 
 def _parse_fitness_from_filename(filename: str) -> float:
-    match = re.search(r"fitness_([0-9.]+)\.png", filename)
+    match = re.search(r"fitness_(-?[0-9.]+)\.png", filename)
     return float(match.group(1)) if match else 0
 
 
