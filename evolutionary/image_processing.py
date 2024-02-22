@@ -1,6 +1,6 @@
 from typing import List, Any, Optional
 from PIL import Image
-from evolutionary.evolution_base import SolutionCandidate, SingleObjectiveFitness
+from evolutionary.evolution_base import SolutionCandidate, Fitness
 from evolutionary.image_base import ImageSolutionData
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
@@ -19,12 +19,20 @@ TODO this has to be adjusted for multi-objective handling
 RESULTS_FOLDER = "results"
 
 
-def parse_fitness_from_filename(filename: str) -> float:
-    match = re.search(r"fitness_(-?[0-9.]+)\.png", filename)
-    return float(match.group(1)) if match else 0
+def parse_fitness_from_filename(filename: str) -> Fitness:
+    # Match "fitness_" followed by one or more groups of one or more digits
+    # (with optional decimal point and negative sign), separated by underscores
+    matches = re.findall(r"fitness_((-?\d+(\.\d+)?_?)+)\.png", filename)
+    if matches:
+        fitness_values = matches[0][0].split('_')
+        if len(fitness_values) == 1:  # Single objective
+            return float(fitness_values[0])
+        else:
+            return [float(value) for value in fitness_values]
+    return 0.0
 
 
-def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, SingleObjectiveFitness]],
+def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, Fitness]],
                                 generation: int) -> None:
     """
     Saves images from a given generation of solution candidates to the RESULTS folder with a sub-folder for
@@ -34,12 +42,17 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
     - population (List[SolutionCandidate[Any, ImageSolutionData]]): The population of solution candidates.
     - generation (int): The current generation number.
     """
-    generation_dir = os.path.join(RESULTS_FOLDER, f"{generation}")
+    generation_dir = os.path.join(RESULTS_FOLDER, str(generation))
     os.makedirs(generation_dir, exist_ok=True)
 
     for index, candidate in enumerate(population):
         image_solution_data = candidate.result
-        fitness_str = f"{candidate.fitness:.3f}"
+
+        # Check if the fitness is single or multi-objective
+        if isinstance(candidate.fitness, list):
+            fitness_str = "_".join(f"{fit:.3f}" for fit in candidate.fitness)
+        else:
+            fitness_str = f"{candidate.fitness:.3f}"
 
         for i, image in enumerate(image_solution_data.images):
             image_name = f"{index}_{i}_fitness_{fitness_str}.png"
@@ -63,6 +76,12 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
     Returns:
     - plt.Figure: The matplotlib figure object containing the image grid.
     """
+    def sorting_key(filename: str) -> float:
+        f = parse_fitness_from_filename(filename)
+        if isinstance(f, list):  # If multi-objective, compute the sum, simple way to compare
+            return sum(f)
+        return f
+
     generation_dir = os.path.join(RESULTS_FOLDER, f"{generation}")
 
     # Delete plot if already exists
@@ -71,7 +90,8 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
         os.remove(output_filepath)
 
     image_files = glob.glob(os.path.join(generation_dir, "*.png"))
-    image_files.sort(key=parse_fitness_from_filename, reverse=True)
+    image_files.sort(key=sorting_key, reverse=True)
+
     if max_images is not None:
         image_files = image_files[:max_images]
 
