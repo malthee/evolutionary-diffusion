@@ -18,7 +18,7 @@ Images are saved in the RESULTS_FOLDER, have their fitness and index in the file
 RESULTS_FOLDER = "results"
 
 
-def _parse_fitness_from_filename(filename: str) -> float:
+def parse_fitness_from_filename(filename: str) -> float:
     match = re.search(r"fitness_(-?[0-9.]+)\.png", filename)
     return float(match.group(1)) if match else 0
 
