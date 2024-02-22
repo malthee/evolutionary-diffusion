@@ -99,7 +99,27 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
 
 class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]):
     def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData, Any]:
-        pass  # TODO
+        try:
+            images = self._pipeline(
+                prompt_embeds=argument.prompt_embeds,
+                num_inference_steps=self._inference_steps,
+                num_images_per_prompt=self._batch_size,
+                guidance_scale=0.0,  # 0 for Turbo models
+                generator=self._generators,
+            ).images
+        except Exception as e:
+            # This most likely happens because an out of memory error, so we reinitialize the pipeline and retry
+            print(f"Image generation failed, retrying once: {e}")
+            self._pipeline = self._pipeline_factory()
+            images = self._pipeline(
+                prompt_embeds=argument.prompt_embeds,
+                num_inference_steps=self._inference_steps,
+                num_images_per_prompt=self._batch_size,
+                guidance_scale=0.0,  # 0 for Turbo models
+                generator=self._generators,
+            ).images
+
+        return SolutionCandidate(argument, ImageSolutionData(images))
 
     @torch.no_grad()
     def arguments_from_prompt(self, prompt: str) -> PromptEmbedData:

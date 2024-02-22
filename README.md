@@ -47,7 +47,7 @@ the evolutionary algorithm to move in the prompt embedding space. Other possible
 image creators could work with prompts themselves, as a form of Genetic Programming or also
 with image embeddings. Current supported creators:
 * SDXLPromptEmbeddingImageCreator: Supports the SDXL pipeline, creates both prompt- and pooled-prompt-embeddings.
-* SDPromptEmbeddingImageCreator: In the works, only has prompt-embeddings.
+* SDPromptEmbeddingImageCreator: Only has prompt-embeddings, is faster but produces less quality results than SDXL.
 
 ## Class Diagrams
 
@@ -60,5 +60,6 @@ These notebooks also allow for simple inference so that any model can be tried o
 * clip_evaluators: uses torch metrics with CLIPScore and CLIP IQA. CLIPScore could define the fitness for "prompt fulfillment" or "image alignment" while CLIP IQA has many possible metrics like "quality, brightness, happiness..."
 * ai_detection_evaluator: uses a pre-trained model for AI image detection. This could be a fitness criteria to minimize "AI-likeness" in images.
 * aesthetics_evaluator: uses a pre-trained model from the maintainers of the LAION image dataset, which scores an image 0-10 depending on how "aesthetic" it is. Could be used as a maximization criteria for the fitness of images.
+* clamp_range: testing the usual prompt-embedding min and max values for different models, so that a CLAMP range can be set in the mutator for example.
 
 
