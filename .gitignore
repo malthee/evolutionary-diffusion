@@ -1,5 +1,8 @@
 .DS_Store
 
+# Pickled files
+*.pkl
+
 # Cannot push models as they are too large
 *.pth
 *.safetensors

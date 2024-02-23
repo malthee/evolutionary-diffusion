@@ -13,7 +13,6 @@ import imageio
 """
 These functions are used to save and visualize images from the solution candidates of an evolutionary algorithm.
 Images are saved in the RESULTS_FOLDER, have their fitness and index in the filename.
-TODO this has to be adjusted for multi-objective handling
 """
 
 RESULTS_FOLDER = "results"
@@ -64,6 +63,8 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
                                  safe_to_folder: bool = True) -> plt.Figure:
     """
     Creates a grid of images from a specific generation.
+    Recommend for single-objective optimization or multi-objective optimization with 2 objectives.
+    Otherwise, use create_generation_radar_charts().
 
     Args:
     - generation (int): The generation number for which to create the image grid. Used as the title.
@@ -113,7 +114,9 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
         ax.imshow(img)
         ax.axis('off')
         fitness = parse_fitness_from_filename(img_file)
-        ax.set_title(f"{fitness:.3f}", fontsize=16)
+        # Fitness may be single or multi-objective
+        ax.set_title(f"{fitness:.3f}" if not isinstance(fitness, list)
+                     else ", ".join(f"{fit:.1f}" for fit in fitness), fontsize=16)
 
     plt.tight_layout(pad=1.5)
     if safe_to_folder:
@@ -122,7 +125,11 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
     return fig
 
 
-def create_animation_from_generations(num_generations: int, output_file: str = "ga_evolution.mp4",
+def create_generation_radar_charts():
+    pass  # TODO implement radar charts for multi-objective optimization
+
+
+def create_animation_from_generations(num_generations: int, output_file: str = "evolution.mp4",
                                       time_per_frame: int = 1000, time_last_frame: int = 5000, fps: int = 5) -> str:
     """
     Creates an animated MP4 video from the image grids of multiple generations using imageio with ffmpeg.
@@ -163,7 +170,7 @@ def create_animation_from_generations(num_generations: int, output_file: str = "
     return output_location
 
 
-def create_animation_from_generations_pil(num_generations: int, output_file: str = "ga_evolution.gif",
+def create_animation_from_generations_pil(num_generations: int, output_file: str = "evolution.gif",
                                           time_per_frame: int = 1000, time_last_frame: int = 5000) -> str:
     """
     First call create_generation_image_grid() for each generation.

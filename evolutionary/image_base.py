@@ -42,6 +42,20 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
         self._generators = [torch.Generator(device=self._pipeline.device).manual_seed(i)
                             for i in range(batch_size)] if deterministic else None
 
+    def __getstate__(self):
+        # Exclude the pipeline, generators from pickling
+        state = self.__dict__.copy()
+        del state['_pipeline']
+        del state['_generators']
+        return state
+
+    def __setstate__(self, state):
+        # Reinitialize the pipeline and generators
+        self.__dict__.update(state)
+        self._pipeline = self._pipeline_factory()
+        self._generators = [torch.Generator(device=self._pipeline.device).manual_seed(i)
+                            for i in range(self._batch_size)] if self._deterministic else None
+
     @abstractmethod
     def create_solution(self, argument: A) -> SolutionCandidate[A, ImageSolutionData, Any]:
         """
