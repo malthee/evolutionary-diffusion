@@ -17,9 +17,9 @@ def _dominates(individual1, individual2):
     """Check if individual1 dominates individual2."""
     better_in_one = False
     for i in range(len(individual1.fitness)):
-        if individual1.fitness[i] > individual2.fitness[i]:  # For maximization, use >
+        if individual1.fitness[i] < individual2.fitness[i]:
             return False
-        elif individual1.fitness[i] < individual2.fitness[i]:  # For maximization, use <
+        elif individual1.fitness[i] > individual2.fitness[i]:
             better_in_one = True
     return better_in_one
 
@@ -34,6 +34,7 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
                  crossover: Crossover[A],
                  evaluator: MultiObjectiveEvaluator[R],
                  initial_arguments: List[A],
+                 elitism_count: Optional[int] = None,
                  normalize_crowding_distance: bool = True,
                  post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None):
         super().__init__(
@@ -47,6 +48,7 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
             initial_arguments=initial_arguments,
             post_evaluation_callback=post_evaluation_callback
         )
+        self._elitism_count = elitism_count
         # Normalize objective values, so they contribute equally to crowding distance calculation.
         self._normalize_crowding_distance = normalize_crowding_distance
         self._population: List[NSGASolutionCandidate] = []  # Override the type to NSGA-II's solution candidate
@@ -104,14 +106,15 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         self._population = self._population[:self._population_size]  # Trim to population size
 
     def _crossover_and_mutation(self):
-        new_population = []
+        new_population = self._population[:self._elitism_count] if self._elitism_count else []
         while len(new_population) < self._population_size:
             parent1 = self._selector.select(self._population)
             parent2 = self._selector.select(self._population)
-            child_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
-            child_args = self._mutator.mutate(child_args)
-            child = NSGASolutionCandidate(child_args, self._solution_creator.create_solution(child_args))
-            new_population.append(child)
+            offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
+            offspring_args = self._mutator.mutate(offspring_args)
+            offspring = NSGASolutionCandidate(offspring_args,
+                                              self._solution_creator.create_solution(offspring_args).result)
+            new_population.append(offspring)
         del self._population
         self._population = new_population
 

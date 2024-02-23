@@ -3,8 +3,12 @@ import torch
 import torch.nn as nn
 import numpy as np
 import clip
-from typing import Union, Tuple
-from evolutionary.evolution_base import Evaluator, SingleObjectiveEvaluator
+from torchvision.transforms.functional import pil_to_tensor
+from typing import Union, Tuple, Literal
+
+from torchmetrics.multimodal import CLIPScore
+
+from evolutionary.evolution_base import Evaluator, SingleObjectiveEvaluator, SingleObjectiveFitness
 from evolutionary.image_base import ImageSolutionData
 from model_helpers.auto_device import auto_clip_device, load_torch_model
 
@@ -55,7 +59,7 @@ class AestheticsImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
         self.clip_model, self.preprocess = clip.load(self.CLIP_MODEL_NAME, device=self.device)
 
     @torch.no_grad()
-    def evaluate(self, result: ImageSolutionData) -> float:
+    def evaluate(self, result: ImageSolutionData) -> SingleObjectiveFitness:
         scores = []
         for img in result.images:
             image = self.preprocess(img).unsqueeze(0).to(self.device)
@@ -67,24 +71,42 @@ class AestheticsImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
 
 
 class AIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
-    def evaluate(self, result: ImageSolutionData) -> float:
+    """
+    Evaluate the AI-likeliness of an image. TODO support newer model for sdxl also.
+    """
+
+    def evaluate(self, result: ImageSolutionData) -> SingleObjectiveFitness:
         # Implement specific logic
         pass
 
 
 class CLIPScoreEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
-    def __init__(self, prompt: str):
-        self.prompt = prompt
+    SupportedCLIPModels = Literal["openai/clip-vit-base-patch16", "openai/clip-vit-base-patch32",
+                                  "openai/clip-vit-large-patch14-336", "openai/clip-vit-large-patch14"]
 
-    def evaluate(self, result: ImageSolutionData) -> float:
-        # Implement specific logic
-        pass
+    """
+    Evaluates the CLIP score of an image.
+    Supported CLIP models are defined in `supported_clip_models`.
+    """
+
+    def __init__(self, prompt: str, clip_model: SupportedCLIPModels = "openai/clip-vit-base-patch16"):
+        self._prompt = prompt
+        self._model = CLIPScore(model_name_or_path=clip_model)
+
+    @torch.no_grad()
+    def evaluate(self, result: ImageSolutionData) -> SingleObjectiveFitness:
+        scores = []
+        for img in result.images:
+            t = pil_to_tensor(img)
+            score = self._model(t, self._prompt)
+            scores.append(score.item())
+        return np.mean(scores) if scores else 0.0
 
 
 class CLIPIQAEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
     def __init__(self, metric: Union[str, Tuple[str, str]]):
         self.metric = metric
 
-    def evaluate(self, result: ImageSolutionData) -> float:
+    def evaluate(self, result: ImageSolutionData) -> SingleObjectiveFitness:
         # Implement specific logic
         pass
