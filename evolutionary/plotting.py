@@ -5,15 +5,15 @@ from evolutionary.evolution_base import Fitness
 
 
 def plot_fitness_statistics(num_generations: int,
-                                   best_fitness: Optional[List[Fitness]] = None,
-                                   worst_fitness: Optional[List[Fitness]] = None,
-                                   avg_fitness: Optional[List[Fitness]] = None,
-                                   title: str = 'Fitness Statistics over Generations',
-                                   # Labels used when plotting multi-objective fitness
-                                   labels: Optional[List[str]] = None,
-                                   # Only plot the fitness of the index objective.
-                                   multi_objective_plot_index: Optional[int] = None
-                                   ):
+                            best_fitness: Optional[List[Fitness]] = None,
+                            worst_fitness: Optional[List[Fitness]] = None,
+                            avg_fitness: Optional[List[Fitness]] = None,
+                            title: str = 'Fitness Statistics over Generations',
+                            # Labels used when plotting multi-objective fitness
+                            labels: Optional[List[str]] = None,
+                            # Only plot the fitness of the index objective.
+                            multi_objective_plot_index: Optional[int] = None
+                            ):
     """
     Plots the fitness statistics over generations.
     Plots single of multi objective fitness with optional custom labels as descriptors for each fitness.

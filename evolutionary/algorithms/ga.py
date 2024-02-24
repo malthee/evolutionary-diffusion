@@ -1,6 +1,6 @@
-from typing import List, Callable, Generic, Optional
+from typing import List, Optional
 from evolutionary.evolution_base import (
-    SolutionCandidate, SolutionCreator, Evaluator, Mutator, Crossover, Selector, A, R, Algorithm,
+    SolutionCandidate, SolutionCreator, Mutator, Crossover, Selector, A, R, Algorithm,
     SingleObjectiveEvaluator, SingleObjectiveFitness
 )
 
