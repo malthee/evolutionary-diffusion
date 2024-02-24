@@ -19,8 +19,10 @@ RESULTS_FOLDER = "results"
 
 
 def parse_fitness_from_filename(filename: str) -> Fitness:
-    # Match "fitness_" followed by one or more groups of one or more digits
-    # (with optional decimal point and negative sign), separated by underscores
+    """
+    Match "fitness_" followed by one or more groups of one or more digits
+    (with optional decimal point and negative sign), separated by underscores
+    """
     matches = re.findall(r"fitness_((-?\d+(\.\d+)?_?)+)\.png", filename)
     if matches:
         fitness_values = matches[0][0].split('_')
@@ -29,6 +31,17 @@ def parse_fitness_from_filename(filename: str) -> Fitness:
         else:
             return [float(value) for value in fitness_values]
     return 0.0
+
+
+def fitness_filename_sorting_key(filename: str) -> float:
+    """
+    Sorting key for filenames based on fitness. Used to sort images by fitness.
+    For multi-objective optimization, the sum of the fitness values is used.
+    """
+    f = parse_fitness_from_filename(filename)
+    if isinstance(f, list):  # If multi-objective, compute the sum, simple way to compare
+        return sum(f)
+    return f
 
 
 def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, Fitness]],
@@ -77,12 +90,6 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
     Returns:
     - plt.Figure: The matplotlib figure object containing the image grid.
     """
-    def sorting_key(filename: str) -> float:
-        f = parse_fitness_from_filename(filename)
-        if isinstance(f, list):  # If multi-objective, compute the sum, simple way to compare
-            return sum(f)
-        return f
-
     generation_dir = os.path.join(RESULTS_FOLDER, f"{generation}")
 
     # Delete plot if already exists
@@ -91,7 +98,7 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
         os.remove(output_filepath)
 
     image_files = glob.glob(os.path.join(generation_dir, "*.png"))
-    image_files.sort(key=sorting_key, reverse=True)
+    image_files.sort(key=fitness_filename_sorting_key, reverse=True)
 
     if max_images is not None:
         image_files = image_files[:max_images]

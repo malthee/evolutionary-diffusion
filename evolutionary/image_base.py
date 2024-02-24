@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from typing import List, Callable, Any, Generic
+from typing import List, Callable, Any
 from PIL import Image
 from diffusers import DiffusionPipeline
 from evolutionary.evolution_base import SolutionCreator, SolutionCandidate, A
