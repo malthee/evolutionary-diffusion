@@ -5,12 +5,11 @@ import numpy as np
 import clip
 from torchvision.transforms.functional import pil_to_tensor
 from typing import Union, Tuple, Literal
+from torchmetrics.multimodal import CLIPScore, CLIPImageQualityAssessment
 
-from torchmetrics.multimodal import CLIPScore
-
-from evolutionary.evolution_base import Evaluator, SingleObjectiveEvaluator, SingleObjectiveFitness
-from evolutionary.image_base import ImageSolutionData
-from model_helpers.auto_device import auto_clip_device, load_torch_model
+from evolutionary.evolution_base import SingleObjectiveEvaluator, SingleObjectiveFitness
+from evolutionary_imaging.image_base import ImageSolutionData
+from evolutionary_model_helpers.auto_device import auto_clip_device, load_torch_model
 
 
 def _normalized(a, axis=-1, order=2):

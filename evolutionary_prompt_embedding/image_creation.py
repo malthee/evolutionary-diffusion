@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any, Generic
+from typing import Any, Literal
 
-from evolutionary.prompt_encoding.argument_types import PooledPromptEmbedData, PromptEmbedData
+from evolutionary_prompt_embedding.argument_types import PooledPromptEmbedData, PromptEmbedData
 from evolutionary.evolution_base import SolutionCandidate
-from evolutionary.image_base import ImageCreator, ImageSolutionData, A
+from evolutionary_imaging.image_base import ImageCreator, ImageSolutionData, A
 import torch
 
 
@@ -18,6 +18,21 @@ class PromptEmbeddingImageCreator(ImageCreator[A], ABC):
 
 
 class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEmbedData]):
+    """
+    A class that creates image solutions from prompt embeddings using the SDXL pipeline.
+    """
+
+    def __init__(self,
+                 inference_steps: int,
+                 batch_size: int,
+                 deterministic: bool = True,
+                 model_id: Literal["stabilityai/sdxl-turbo"] = "stabilityai/sdxl-turbo"):
+        """
+        Initializes the ImageCreator with the given parameters.
+        By default, uses the "stabilityai/sdxl-turbo" model, other SDXL variants should work as well.
+        """
+        super().__init__(model_id, inference_steps, batch_size, deterministic)
+
     def create_solution(self, argument: PooledPromptEmbedData) \
             -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData, Any]:
         try:
@@ -32,7 +47,7 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
         except Exception as e:
             # This most likely happens because an out of memory error, so we reinitialize the pipeline and retry
             print(f"Image generation failed, retrying once: {e}")
-            self._pipeline = self._pipeline_factory()
+            self._pipeline = self._setup_diffusers_pipeline()
             images = self._pipeline(
                 prompt_embeds=argument.prompt_embeds,
                 pooled_prompt_embeds=argument.pooled_prompt_embeds,
@@ -46,6 +61,10 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
 
     @torch.no_grad()
     def arguments_from_prompt(self, prompt: str) -> PooledPromptEmbedData:
+        """
+        Taken from diffusers/pipelines, logic to create prompt embeddings from a prompt string.
+        """
+
         tokenizer = self._pipeline.tokenizer
         tokenizer_2 = self._pipeline.tokenizer_2
         text_encoder = self._pipeline.text_encoder
@@ -98,6 +117,21 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
 
 
 class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]):
+    """
+    An ImageCreator that creates image solutions from prompt embeddings using the SD pipeline.
+    """
+
+    def __init__(self,
+                 inference_steps: int,
+                 batch_size: int,
+                 deterministic: bool = True,
+                 model_id: Literal["stabilityai/sd-turbo"] = "stabilityai/sd-turbo"):
+        """
+        Initializes the ImageCreator with the given parameters.
+        By default, uses the "stabilityai/sd-turbo" model, other SD variants should work as well.
+        """
+        super().__init__(model_id, inference_steps, batch_size, deterministic)
+
     def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData, Any]:
         try:
             images = self._pipeline(
@@ -110,7 +144,7 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
         except Exception as e:
             # This most likely happens because an out of memory error, so we reinitialize the pipeline and retry
             print(f"Image generation failed, retrying once: {e}")
-            self._pipeline = self._pipeline_factory()
+            self._pipeline = self._setup_diffusers_pipeline()
             images = self._pipeline(
                 prompt_embeds=argument.prompt_embeds,
                 num_inference_steps=self._inference_steps,
@@ -123,6 +157,10 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
 
     @torch.no_grad()
     def arguments_from_prompt(self, prompt: str) -> PromptEmbedData:
+        """
+        Taken from diffusers/pipelines, logic to create prompt embeddings from a prompt string.
+        """
+
         tokenizer = self._pipeline.tokenizer
         text_encoder = self._pipeline.text_encoder
 

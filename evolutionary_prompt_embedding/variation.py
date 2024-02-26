@@ -1,8 +1,8 @@
 from typing import Tuple
 from evolutionary.evolution_base import Mutator, Crossover
-from evolutionary.prompt_encoding.argument_types import PromptEmbedData, PooledPromptEmbedData
-from evolutionary._tensor_variation import (uniform_crossover_tensors, uniform_gaussian_mutate_tensor,
-                                            arithmetic_crossover)
+from evolutionary_prompt_embedding.argument_types import PromptEmbedData, PooledPromptEmbedData
+from evolutionary_prompt_embedding._tensor_variation import (uniform_crossover_tensors, uniform_gaussian_mutate_tensor,
+                                                             arithmetic_crossover)
 
 
 class ArithmeticCrossover(Crossover[PromptEmbedData]):

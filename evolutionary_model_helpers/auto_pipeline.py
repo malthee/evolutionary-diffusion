@@ -1,4 +1,4 @@
-from model_helpers.auto_device import auto_to_device
+from evolutionary_model_helpers.auto_device import auto_to_device
 from diffusers import DiffusionPipeline
 import torch
 

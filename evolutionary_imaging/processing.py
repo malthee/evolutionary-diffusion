@@ -1,7 +1,7 @@
 from typing import List, Any, Optional
 from PIL import Image
 from evolutionary.evolution_base import SolutionCandidate, Fitness
-from evolutionary.image_base import ImageSolutionData
+from evolutionary_imaging.image_base import ImageSolutionData
 from matplotlib import gridspec
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
