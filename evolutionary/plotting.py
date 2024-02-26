@@ -1,4 +1,4 @@
-from typing import List, Optional, Any
+from typing import List, Optional
 import matplotlib.pyplot as plt
 
 from evolutionary.evolution_base import Fitness

@@ -6,7 +6,6 @@ The fitness type is generic and can be either a single value or a sequence of va
 optimization.
 By default, uses maximization of fitness values, to minimize a fitness value, use the negative value.
 """
-from random import randint
 from typing import Generic, TypeVar, Optional, List, Callable, Sequence, Any
 from abc import abstractmethod, ABC
 
@@ -170,14 +169,14 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         If not enough initial arguments are given, the rest of the population is filled with random choices.
         """
         self._population = []
-        for arg in self._initial_arguments:
-            self._population.append(self._solution_creator.create_solution(arg))
+        i = 0
 
-        # If there are not enough initial arguments, fill the rest with random choices
+        # Init form the args, wrap around if there are not enough
         while len(self._population) < self._population_size:
             self._population.append(self._solution_creator.create_solution(
-                self._initial_arguments[randint(0, len(self._initial_arguments) - 1)])
+                self._initial_arguments[i % len(self._initial_arguments)])
             )
+            i += 1
         return self._population
 
     @property
