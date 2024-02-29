@@ -19,7 +19,7 @@ class PromptEmbeddingImageCreator(ImageCreator[A], ABC):
 
 class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEmbedData]):
     """
-    A class that creates image solutions from prompt embeddings using the SDXL pipeline.
+    A class that creates image solutions from prompt embeddings using the SDXL pipeline. (TODO subclassing with turbo)
     """
 
     def __init__(self,
@@ -35,10 +35,13 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
 
     def create_solution(self, argument: PooledPromptEmbedData) \
             -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData, Any]:
+        prompt_embeds = argument.prompt_embeds
+        pooled_prompt_embeds = argument.pooled_prompt_embeds
+
         try:
             images = self._pipeline(
-                prompt_embeds=argument.prompt_embeds,
-                pooled_prompt_embeds=argument.pooled_prompt_embeds,
+                prompt_embeds=prompt_embeds,
+                pooled_prompt_embeds=pooled_prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0,  # 0 for Turbo models
@@ -49,8 +52,8 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
             print(f"Image generation failed, retrying once: {e}")
             self._pipeline = self._setup_diffusers_pipeline()
             images = self._pipeline(
-                prompt_embeds=argument.prompt_embeds,
-                pooled_prompt_embeds=argument.pooled_prompt_embeds,
+                prompt_embeds=prompt_embeds,
+                pooled_prompt_embeds=pooled_prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0,  # 0 for Turbo models
@@ -133,9 +136,11 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
         super().__init__(model_id, inference_steps, batch_size, deterministic)
 
     def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData, Any]:
+        prompt_embeds = argument.prompt_embeds
+
         try:
             images = self._pipeline(
-                prompt_embeds=argument.prompt_embeds,
+                prompt_embeds=prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0,  # 0 for Turbo models
@@ -146,7 +151,7 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
             print(f"Image generation failed, retrying once: {e}")
             self._pipeline = self._setup_diffusers_pipeline()
             images = self._pipeline(
-                prompt_embeds=argument.prompt_embeds,
+                prompt_embeds=prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0,  # 0 for Turbo models
