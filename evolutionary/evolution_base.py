@@ -8,6 +8,7 @@ By default, uses maximization of fitness values, to minimize a fitness value, us
 """
 from typing import Generic, TypeVar, Optional, List, Callable, Sequence, Any
 from abc import abstractmethod, ABC
+from tqdm import tqdm
 
 A = TypeVar('A')
 R = TypeVar('R')
@@ -150,7 +151,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
             self._worst_fitness.append(min(fitness_values))
             self._avg_fitness.append(sum(fitness_values) / len(fitness_values))
 
-    def _evaluate_population(self, generation: int) -> None:
+    def evaluate_population(self, generation: int) -> None:
         """
         Evaluates and sets the fitness of all candidates in the population.
         Tracks statistics and calls the post evaluation callback if set. Works with any fitness type.
@@ -163,7 +164,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
 
         self.__calculate_fitness_statistics()
 
-    def _create_initial_population(self) -> List[SolutionCandidate[A, R, Fitness]]:
+    def create_initial_population(self):
         """
         Initializes the population controlled by initial arguments through the solution creator.
         If not enough initial arguments are given, the rest of the population is filled with random choices.
@@ -177,11 +178,14 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
                 self._initial_arguments[i % len(self._initial_arguments)])
             )
             i += 1
-        return self._population
 
     @property
     def num_generations(self):
         return self._num_generations
+
+    @property
+    def population_size(self):
+        return self._population_size
 
     @property
     def avg_fitness(self):
@@ -200,20 +204,40 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         return self._population
 
     @abstractmethod
-    def _run_algorithm(self) -> SolutionCandidate[A, R, Fitness]:
+    def perform_generation(self):
         """
-        Inner method to run the algorithm. Must be implemented by subclasses.
+        Run a single generation of the algorithm.
+        The population should be evaluated beforehand.
+        Must be implemented by subclasses.
+        """
+        pass
+
+    @abstractmethod
+    def best_solution(self) -> SolutionCandidate[A, R, Fitness]:
+        """
+        Returns the best solution candidate from the population. Must be implemented by subclasses.
         """
         pass
 
     def run(self) -> SolutionCandidate[A, R, Fitness]:
         """
         Runs the algorithm for the specified number of generations and returns the best solution candidate.
-        TODO evaluate if can also call the loop?
+        Evaluates the population each generation and tracks the fitness statistics.
+        The last generation will only be evaluated, not processed further.
         """
         # (Re)-Initialize lists to store fitness statistics
         self._best_fitness = []
         self._worst_fitness = []
         self._avg_fitness = []
-        self._create_initial_population()
-        return self._run_algorithm()
+        self.create_initial_population()
+
+        for generation in tqdm(range(self.num_generations), unit='generation'):
+            self.evaluate_population(generation)
+
+            # If this is the last generation, finish here
+            if generation == self.num_generations - 1:
+                continue
+
+            self.perform_generation()
+
+        return self.best_solution()

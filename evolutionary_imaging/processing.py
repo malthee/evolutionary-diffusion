@@ -45,7 +45,7 @@ def fitness_filename_sorting_key(filename: str) -> float:
 
 
 def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, Fitness]],
-                                generation: int) -> None:
+                                generation: int, id_prefix: Optional[str] = None) -> None:
     """
     Saves images from a given generation of solution candidates to the RESULTS folder with a sub-folder for
     the generation.
@@ -53,6 +53,8 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
     Args:
     - population (List[SolutionCandidate[Any, ImageSolutionData]]): The population of solution candidates.
     - generation (int): The current generation number.
+    - id_prefix (Optional[str]): A prefix to add to the filenames of the images. Useful for distinguishing between
+    algorithms.
     """
     generation_dir = os.path.join(RESULTS_FOLDER, str(generation))
     os.makedirs(generation_dir, exist_ok=True)
@@ -68,6 +70,8 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
 
         for i, image in enumerate(image_solution_data.images):
             image_name = f"{index}_{i}_fitness_{fitness_str}.png"
+            if id_prefix:
+                image_name = f"{id_prefix}_{image_name}"
             image_path = os.path.join(generation_dir, image_name)
             image.save(image_path)
 

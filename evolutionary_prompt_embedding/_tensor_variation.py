@@ -3,11 +3,11 @@ Implements ways to perform variation on tensors, such as crossover and mutation.
 """
 
 import torch
-from typing import Tuple
+from typing import Tuple, Union
 
 
 def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 0.05, mutation_strength: float = 0.1,
-                                   clamp_range: Tuple[float, float] = (-1, 1)) -> torch.Tensor:
+                                   clamp_range: Tuple[Union[float, torch.Tensor], Union[float, torch.Tensor]] = (-1, 1)) -> torch.Tensor:
     """
     Perform a uniform gaussian mutation on the tensor while keeping it on the same device.
 
@@ -29,8 +29,10 @@ def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 
     flat_tensor[indices_to_mutate] += mutations
     mutated_tensor = flat_tensor.view(tensor.shape)
 
-    mutated_tensor = torch.clamp(mutated_tensor, min=clamp_range[0], max=clamp_range[1])
-
+    # Ensure clamp_range values are on the correct device if they are tensors
+    clamp_min = clamp_range[0].to(device) if torch.is_tensor(clamp_range[0]) else clamp_range[0]
+    clamp_max = clamp_range[1].to(device) if torch.is_tensor(clamp_range[1]) else clamp_range[1]
+    mutated_tensor = torch.clamp(mutated_tensor, min=clamp_min, max=clamp_max)
     return mutated_tensor
 
 

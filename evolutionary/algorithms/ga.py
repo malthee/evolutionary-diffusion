@@ -1,7 +1,7 @@
 from typing import List, Optional
 from evolutionary.evolution_base import (
     SolutionCandidate, SolutionCreator, Mutator, Crossover, Selector, A, R, Algorithm,
-    SingleObjectiveEvaluator, SingleObjectiveFitness
+    SingleObjectiveEvaluator, SingleObjectiveFitness, Fitness
 )
 
 
@@ -30,30 +30,23 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
         )
         self.elitism_count = elitism_count
 
-    def _run_algorithm(self) -> SolutionCandidate[A, R, SingleObjectiveFitness]:
-        for generation in range(self.num_generations):
-            print(f"Generation {generation} started.")
-            self._evaluate_population(generation)
+    def perform_generation(self):
+        # Elitism: Carry over the top individuals if enabled
+        elites = sorted(self._population, key=lambda candidate: candidate.fitness, reverse=True)[:self.elitism_count] \
+            if self.elitism_count else []
 
-            # If this is the last generation, finish here
-            if generation == self.num_generations - 1:
-                break
+        new_population = elites.copy()
+        while len(new_population) < self._population_size:
+            parent1 = self._selector.select(self._population)
+            parent2 = self._selector.select(self._population)
+            offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
+            offspring_args = self._mutator.mutate(offspring_args)
+            offspring = self._solution_creator.create_solution(offspring_args)
+            new_population.append(offspring)
 
-            # Elitism: Carry over the top individuals if enabled
-            elites = sorted(self._population, key=lambda candidate: candidate.fitness, reverse=True)[:self.elitism_count] \
-                if self.elitism_count else []
+        # Test freeing up
+        del self._population
+        self._population = new_population
 
-            new_population = elites.copy()
-            while len(new_population) < self._population_size:
-                parent1 = self._selector.select(self._population)
-                parent2 = self._selector.select(self._population)
-                offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
-                offspring_args = self._mutator.mutate(offspring_args)
-                offspring = self._solution_creator.create_solution(offspring_args)
-                new_population.append(offspring)
-
-            # Test freeing up
-            del self._population
-            self._population = new_population
-
+    def best_solution(self) -> SolutionCandidate[A, R, SingleObjectiveFitness]:
         return max(self._population, key=lambda candidate: candidate.fitness)
