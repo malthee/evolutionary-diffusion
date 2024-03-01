@@ -19,7 +19,7 @@ class PromptEmbeddingImageCreator(ImageCreator[A], ABC):
 
 class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEmbedData]):
     """
-    A class that creates image solutions from prompt embeddings using the SDXL pipeline. (TODO subclassing with turbo)
+    A class that creates image solutions from prompt embeddings using the SDXL pipeline.
     """
 
     def __init__(self,
@@ -44,7 +44,7 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                 pooled_prompt_embeds=pooled_prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0,  # 0 for Turbo models
+                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
                 generator=self._generators,
             ).images
         except Exception as e:
@@ -56,7 +56,7 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                 pooled_prompt_embeds=pooled_prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0,  # 0 for Turbo models
+                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
                 generator=self._generators,
             ).images
 
@@ -143,7 +143,7 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
                 prompt_embeds=prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0,  # 0 for Turbo models
+                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
                 generator=self._generators,
             ).images
         except Exception as e:
@@ -154,7 +154,7 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
                 prompt_embeds=prompt_embeds,
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
-                guidance_scale=0.0,  # 0 for Turbo models
+                guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
                 generator=self._generators,
             ).images
 
