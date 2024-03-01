@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='evolutionary',
-    version='0.1.0',
+    version='0.1.1',
     author='malthee',
     description='Base package defining a framework for evolutionary algorithms to be used with generative networks. '
                 'Splits up the Solution-Representation into arguments and results.',
@@ -13,6 +13,7 @@ setup(
                      'arguments (A) and result (R). ',
     packages=find_packages(),
     install_requires=[
-        'matplotlib>=3.8.0'
+        'matplotlib>=3.8.0',
+        'tqdm>=4.66.0'
     ],
 )

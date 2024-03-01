@@ -118,20 +118,12 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         del self._population
         self._population = new_population
 
-    def _run_algorithm(self) -> SolutionCandidate[A, R, MultiObjectiveFitness]:
-        self._create_initial_population()
-        for generation in range(self.num_generations):
-            print(f"Generation {generation} started.")
-            self._evaluate_population(generation)
+    def perform_generation(self):
+        self._fast_non_dominated_sort()
+        self._calculate_crowding_distance()
+        self._sort_and_trim()
+        self._crossover_and_mutation()
 
-            # If this is the last generation, finish here
-            if generation == self.num_generations - 1:
-                break
-
-            self._fast_non_dominated_sort()
-            self._calculate_crowding_distance()
-            self._sort_and_trim()
-            self._crossover_and_mutation()
-
+    def best_solution(self) -> NSGASolutionCandidate:
         # Take the solution with the highest crowding distance in the first front
         return max(self._fronts[0], key=lambda x: x.crowding_distance)
