@@ -37,14 +37,22 @@ class SingleObjectiveEvaluator(Evaluator[R_covariant, SingleObjectiveFitness], A
 
 
 class MultiObjectiveEvaluator(Evaluator[R_covariant, MultiObjectiveFitness]):
-    def __init__(self, evaluators: Sequence[SingleObjectiveEvaluator[R_covariant]]):
+    def __init__(self, evaluators: Sequence[Evaluator[R_covariant, Fitness]]):
         """
-        Initializes the multi-objective evaluator with a list of single-objective evaluators.
+        Initializes the multi-objective evaluator with a list of single- and multi-objective evaluators.
+        The result of multiple evaluators will extend the result of this evaluator.
         """
         self._evaluators = evaluators
 
     def evaluate(self, result: R_covariant) -> MultiObjectiveFitness:
-        return [evaluator.evaluate(result) for evaluator in self._evaluators]
+        fitness = []
+        for evaluator in self._evaluators:
+            evaluation_result = evaluator.evaluate(result)
+            if isinstance(evaluation_result, list):  # Extend with multi-objective results, append single-objective
+                fitness.extend(evaluation_result)
+            else:
+                fitness.append(evaluation_result)
+        return fitness
 
 
 class InverseEvaluator(SingleObjectiveEvaluator):
@@ -117,6 +125,9 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
                  evaluator: Evaluator[R, Fitness],
                  initial_arguments: List[A],
                  post_evaluation_callback: Optional[GenerationCallback] = None):
+        assert num_generations > 0, "Number of generations must be greater than 0"
+        assert population_size > 0, "Population size must be greater than 0"
+        assert len(initial_arguments) > 0, "Initial arguments must not be empty"
         self._num_generations = num_generations
         self._population_size = population_size
         self._solution_creator = solution_creator

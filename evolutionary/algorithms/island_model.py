@@ -14,6 +14,16 @@ class IslandModel:
         assert len(self._islands) > 1, "Island model requires at least 2 islands"
         assert all(algorithms[0].num_generations == algorithm.num_generations for algorithm in algorithms), \
             "All islands must have the same number of generations"
+        """
+        Parameters
+        ----------
+        algorithms : List[Algorithm[A, R, Fitness]]
+            The algorithms to run on each island. Typification must be the same.
+        migration_interval : int
+            How many generations to wait before migrating individuals between islands.
+        migration_size : int
+            How many individuals to migrate from each island in a migration event.
+        """
 
     def _migrate(self):
         """
