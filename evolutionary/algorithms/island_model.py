@@ -28,7 +28,7 @@ class IslandModel:
     def _migrate(self):
         """
         Perform random migration of individuals between islands.
-        After this some islands may have less individuals than others.
+        After this some islands may have fewer individuals than others.
         This could be enhanced with replacement strategies, like taking the best ones from the source island etc.
         """
         for i in range(len(self._islands)):
@@ -65,3 +65,38 @@ class IslandModel:
                 self._migrate()
 
         return [island.best_solution() for island in self._islands]
+
+    def _island_fitness_aggregated(self, island_fitness_list: List[List[Fitness]]):
+        num_generations = len(island_fitness_list[0])
+
+        if isinstance(island_fitness_list[0][0], list):  # Is multi-objective when first islands fitness values are
+            num_objectives = len(island_fitness_list[0][0])
+            avg_over_time = []
+
+            for gen in range(num_generations):
+                avg_per_objective = [0] * num_objectives
+                for o in range(num_objectives):
+                    avg_per_objective[o] = sum(island[gen][o] for island in island_fitness_list) / len(self._islands)
+                avg_over_time.append(avg_per_objective)
+            return avg_over_time
+
+        else:  # Single-objective
+            return [sum(island[gen] for island in island_fitness_list) / len(self._islands) for gen in range(num_generations)]
+
+    @property
+    def avg_fitness(self):
+        """Average fitness over all islands"""
+        avg_fitness = [island.avg_fitness for island in self._islands]
+        return self._island_fitness_aggregated(avg_fitness)
+
+    @property
+    def worst_fitness(self):
+        """Average worst fitness over all islands"""
+        worst_fitness = [island.worst_fitness for island in self._islands]
+        return self._island_fitness_aggregated(worst_fitness)
+
+    @property
+    def best_fitness(self):
+        """Average best fitness over all islands"""
+        best_fitness = [island.best_fitness for island in self._islands]
+        return self._island_fitness_aggregated(best_fitness)
