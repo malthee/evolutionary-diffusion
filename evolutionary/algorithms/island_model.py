@@ -22,7 +22,7 @@ class IslandModel:
         migration_interval : int
             How many generations to wait before migrating individuals between islands.
         migration_size : int
-            How many individuals to migrate from each island in a migration event.
+            How many individuals to migrate in total in each migration event.
         """
 
     def _migrate(self):
@@ -31,15 +31,19 @@ class IslandModel:
         After this some islands may have fewer individuals than others.
         This could be enhanced with replacement strategies, like taking the best ones from the source island etc.
         """
-        for i in range(len(self._islands)):
-            source_island = self._islands[i]
-            destination_island = random.choice([island for j, island in enumerate(self._islands) if j != i])
-            migrants = random.sample(source_island.population, min(self._migration_size, len(source_island.population)))
+        for _ in range(self._migration_size):
+            source_island, destination_island = random.sample(self._islands, 2)
 
-            replace_indices = random.sample(range(destination_island.population_size), len(migrants))
+            migrant = random.choice(source_island.population)
+            source_island.population.remove(migrant)  # Remove migrant from source island
 
-            for index, migrant in zip(replace_indices, migrants):
-                destination_island.population[index] = migrant
+            # If the destination island has reached population_size, replace a random individual
+            if len(destination_island.population) >= destination_island.population_size:
+                replace_index = random.randrange(destination_island.population_size)
+                destination_island.population[replace_index] = migrant
+            else:
+                # Otherwise, simply add the migrant to the destination island
+                destination_island.population.append(migrant)
 
     def run(self) -> List[SolutionCandidate[A, R, Fitness]]:
         """
@@ -81,7 +85,8 @@ class IslandModel:
             return avg_over_time
 
         else:  # Single-objective
-            return [sum(island[gen] for island in island_fitness_list) / len(self._islands) for gen in range(num_generations)]
+            return [sum(island[gen] for island in island_fitness_list) / len(self._islands) for gen in
+                    range(num_generations)]
 
     @property
     def avg_fitness(self):
