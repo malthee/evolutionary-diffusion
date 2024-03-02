@@ -78,6 +78,6 @@ def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
     device = tensor1.device
     tensor2 = tensor2.to(device)
 
-    offspring = tensor1 * (1 - interpolation_weight) + tensor2 * interpolation_weight
+    offspring = tensor1 * interpolation_weight + tensor2 * (1 - interpolation_weight)
 
     return offspring

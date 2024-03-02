@@ -9,7 +9,7 @@ class ArithmeticCrossover(Crossover[PromptEmbedData]):
     def __init__(self, interpolation_weight: float):
         """
         :param interpolation_weight: The weight for interpolation (between 0 and 1). A weight of 0.5 results in an
-        equal blend of both tensors.
+        equal blend of both tensors. First tensor is multiplied by the weight, second tensor by (1 - weight).
         """
         self._interpolation_weight = interpolation_weight
 
