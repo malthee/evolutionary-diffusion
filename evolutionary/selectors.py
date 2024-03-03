@@ -47,5 +47,6 @@ class RouletteWheelSelector(Selector[SingleObjectiveFitness]):
         for candidate in candidates:
             if candidate.fitness is not None:
                 current += candidate.fitness
-                if current > pick:
+                if current >= pick:
                     return candidate
+        return random.choice(candidates)

@@ -6,15 +6,15 @@ from evolutionary_prompt_embedding._tensor_variation import (uniform_crossover_t
 
 
 class ArithmeticCrossover(Crossover[PromptEmbedData]):
-    def __init__(self, interpolation_weight: float):
+    def __init__(self, crossover_rate: float):
         """
-        :param interpolation_weight: The weight for interpolation (between 0 and 1). A weight of 0.5 results in an
+        :param crossover_rate: The weight for interpolation (between 0 and 1). A weight of 0.5 results in an
         equal blend of both tensors. First tensor is multiplied by the weight, second tensor by (1 - weight).
         """
-        self._interpolation_weight = interpolation_weight
+        self._crossover_rate = crossover_rate
 
     def crossover(self, argument1: PromptEmbedData, argument2: PromptEmbedData) -> PromptEmbedData:
-        new_embeds = arithmetic_crossover(argument1.prompt_embeds, argument2.prompt_embeds, self._interpolation_weight)
+        new_embeds = arithmetic_crossover(argument1.prompt_embeds, argument2.prompt_embeds, self._crossover_rate)
         return PromptEmbedData(new_embeds)
 
 
@@ -47,18 +47,18 @@ class PooledArithmeticCrossover(Crossover[PooledPromptEmbedData]):
 
 
 class PooledUniformCrossover(Crossover[PooledPromptEmbedData]):
-    def __init__(self, interpolation_weight: float, interpolation_weight_pooled: float):
+    def __init__(self, crossover_rate: float, crossover_rate_pooled: float):
         """
         See UniformCrossover. Added interpolation weight for pooled embeddings.
         """
-        self._interpolation_weight = interpolation_weight
-        self._interpolation_weight_pooled = interpolation_weight_pooled
+        self._crossover_rate = crossover_rate
+        self._crossover_rate_pooled = crossover_rate_pooled
 
     def crossover(self, argument1: PooledPromptEmbedData, argument2: PooledPromptEmbedData) -> PooledPromptEmbedData:
         new_embeds = uniform_crossover_tensors(argument1.prompt_embeds, argument2.prompt_embeds,
-                                               self._interpolation_weight)
+                                               self._crossover_rate)
         new_pooled_embeds = uniform_crossover_tensors(argument1.pooled_prompt_embeds, argument2.pooled_prompt_embeds,
-                                                      self._interpolation_weight_pooled)
+                                                      self._crossover_rate_pooled)
         return PooledPromptEmbedData(new_embeds, new_pooled_embeds)
 
 
