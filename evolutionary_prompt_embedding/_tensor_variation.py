@@ -59,7 +59,7 @@ def uniform_crossover_tensors(tensor1: torch.Tensor, tensor2: torch.Tensor,
 
 
 def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
-                         interpolation_weight: float = 0.5) -> torch.Tensor:
+                         crossover_rate: float = 0.5) -> torch.Tensor:
     """
     Perform an interpolation-based crossover between two tensors.
 
@@ -78,6 +78,6 @@ def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
     device = tensor1.device
     tensor2 = tensor2.to(device)
 
-    offspring = tensor1 * interpolation_weight + tensor2 * (1 - interpolation_weight)
+    offspring = tensor1 * crossover_rate + tensor2 * (1 - crossover_rate)
 
     return offspring
