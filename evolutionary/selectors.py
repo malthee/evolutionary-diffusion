@@ -40,6 +40,7 @@ class RouletteWheelSelector(Selector[SingleObjectiveFitness]):
     """
     Roulette Wheel selection: Selects individuals based on fitness proportionate probabilities.
     """
+
     def select(self, candidates: List[SolutionCandidate]) -> SolutionCandidate:
         total_fitness = sum(candidate.fitness for candidate in candidates if candidate.fitness is not None)
         pick = random.uniform(0, total_fitness)
