@@ -1,0 +1,30 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: Evolutionary Diffusion
+message: Please cite this software using these metadata.
+type: software
+authors:
+  - given-names: Marcel
+    family-names: Salvenmoser
+    affiliation: University of Applied Sciences Upper Austria
+repository-code: 'https://github.com/malthee/evolutionary-diffusion'
+repository-artifact: 'https://github.com/malthee/evolutionary-diffusion-results'
+abstract: >-
+  Applying Evolutionary Computing to Diffusion Models
+  generating Images and Artwork driven by Fitness
+keywords:
+  - diffusion
+  - evolution
+  - genetic algorithm
+  - island model
+  - latent space
+  - clip
+  - prompt embedding
+  - laion
+  - jupyter
+  - python
+  - torch
+  - exploration
+license: MIT
