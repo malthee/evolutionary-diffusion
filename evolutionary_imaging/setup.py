@@ -14,7 +14,7 @@ setup(
         'imageio',
         'numpy',
         # Used in the Aesthetics model
-        'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33'
+        'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33',
         'torch~=2.1.0',
         'torchvision~=0.16.0',
         'torchmetrics~=1.2.0',
