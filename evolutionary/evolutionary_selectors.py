@@ -1,6 +1,6 @@
 import random
 from typing import List
-from evolutionary.evolution_base import SolutionCandidate, Selector, SingleObjectiveFitness
+from evolution_base import SolutionCandidate, Selector, SingleObjectiveFitness
 
 
 class TournamentSelector(Selector[SingleObjectiveFitness]):
