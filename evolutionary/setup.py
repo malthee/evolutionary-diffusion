@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='evolutionary',
-    version='0.1.2',
+    version='0.1.3',
     author='malthee',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
                    Splits up the Solution-Representation into arguments and results.''',
