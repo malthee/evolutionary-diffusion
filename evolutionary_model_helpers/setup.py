@@ -7,9 +7,9 @@ setup(
     description='Helper package for auto-loading different model types on devices. With additional utility functions.',
     packages=find_packages(),
     install_requires=[
+        'pillow',
         'torch~=2.1.0',
         'diffusers~=0.25.0',
         'transformers~=4.36.0',
-        'Pillow>=10.1.0',
     ],
 )

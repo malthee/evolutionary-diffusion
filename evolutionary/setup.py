@@ -13,7 +13,7 @@ setup(
                      'arguments (A) and result (R). ',
     packages=find_packages(),
     install_requires=[
-        'matplotlib>=3.8.0',
-        'tqdm>=4.66.0'
+        'matplotlib',
+        'tqdm'
     ],
 )

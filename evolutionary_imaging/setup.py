@@ -10,6 +10,9 @@ setup(
     install_requires=[
         'evolutionary~=0.1.0',
         'model_helpers~=0.1.0',
+        'pillow',
+        'imageio',
+        'numpy',
         # Used in the Aesthetics model
         'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33'
         'torch~=2.1.0',
@@ -17,9 +20,6 @@ setup(
         'torchmetrics~=1.2.0',
         'diffusers~=0.25.0',
         'pytorch-lightning~=2.1.0',
-        'imageio~=2.33.0',
         'transformers~=4.36.0',
-        'numpy>=1.26.0',
-        'Pillow>=10.1.0',
     ],
 )
