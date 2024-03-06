@@ -4,6 +4,7 @@ torch_diffusers_requirements = [
     'torch~=2.2.0',
     'diffusers~=0.26.0',
     'transformers~=4.38.0',
+    'accelerate~=0.27.0',
     'Pillow',
 ]
 
