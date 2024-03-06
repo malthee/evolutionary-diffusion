@@ -3,6 +3,15 @@
 
 Goals: Augment the process of art generation, improve A-to-I ratio, explore possibilities of combination, optimize and automize.
 
+## Try it out in Google Colab
+| Notebook                 | Link                                                                                                                                                                                                          |
+|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Genetic Algorithm        | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/ga_notebook.ipynb)               |
+| Island Genetic Algorithm | [![Island Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/island_ga_notebook.ipynb) |
+| NSGA                     | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/nsga_notebook.ipynb)             |
+
+Or run it locally by just cloning the repository and running the notebooks in the notebooks folder.
+
 ## Example - Creating the most Aesthetic Image
 
 ### Optimizing for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA and SDXL-Turbo
@@ -41,10 +50,6 @@ Performing an Island GA by creating random embeddings and mixing them with artis
 ## Detailed Results and Notebooks
 More detailed results can be found in a separate repository dedicated to the results of the experiments:
 https://github.com/malthee/evolutionary-diffusion-results
-
-## Installation & Environment
-SOON Collab-Compatible!  
-Python, Torch...
 
 ## Evaluators
 * AestheticsImageEvaluator: Uses the [LAION Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor). Blog: https://laion.ai/blog/laion-aesthetics/
