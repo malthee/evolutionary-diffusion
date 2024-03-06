@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
 torch_diffusers_requirements = [
-    'torch~=2.1.0',
-    'diffusers~=0.25.0',
-    'transformers~=4.36.0',
+    'torch~=2.2.0',
+    'diffusers~=0.26.0',
+    'transformers~=4.38.0',
     'Pillow',
 ]
 
@@ -13,9 +13,9 @@ extras_require = {
         'numpy',
         # Used in the Aesthetics model for evaluation
         'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33',
-        'torchvision~=0.16.0',
-        'torchmetrics~=1.2.0',
-        'pytorch-lightning~=2.1.0',
+        'torchvision~=0.17.0',
+        'torchmetrics~=1.3.0',
+        'pytorch-lightning~=2.2.0',
         'imageio>=2.33.0',
     ] + torch_diffusers_requirements,
     'model_helpers': torch_diffusers_requirements,
@@ -54,7 +54,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'tqdm>=4.66.0',  # For visualizing progress of algorithms
-        'matplotlib>=3.8',
+        'matplotlib>=3.7',
     ],
     package_data={
         'evolutionary_prompt_embedding': ['tensors/*'],
