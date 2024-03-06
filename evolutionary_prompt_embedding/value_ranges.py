@@ -24,11 +24,11 @@ class EmbeddingRange:
         return self._max_values
 
     @property
-    def minimum(self) -> float:
+    def minimum(self) -> torch.Tensor:
         return self._minimum
 
     @property
-    def maximum(self) -> float:
+    def maximum(self) -> torch.Tensor:
         return self._maximum
 
     def random_tensor_in_range(self) -> torch.Tensor:
