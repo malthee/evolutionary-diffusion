@@ -1,7 +1,7 @@
 from typing import List, Optional
 from evolutionary.evolution_base import (
     SolutionCandidate, SolutionCreator, Mutator, Crossover, Selector, A, R, Algorithm,
-    SingleObjectiveEvaluator, SingleObjectiveFitness, Fitness
+    SingleObjectiveEvaluator, SingleObjectiveFitness
 )
 
 
