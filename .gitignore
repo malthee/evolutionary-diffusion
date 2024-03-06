@@ -10,7 +10,7 @@
 # Don't push test image results
 pre-testing/**/*.png
 !pre-testing/testimages/*.png
-evolution-experiments/results
+notebooks/results
 
 
 # Byte-compiled / optimized / DLL files
