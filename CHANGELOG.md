@@ -1,4 +1,7 @@
 # Changelog for the evolutionary package
+### 0.2.4 (08.03.2024)
+* Add optional identifiers to image-saving do differentiate between islands in the island modal
+
 ### 0.2.3 (08.03.2024)
 * Fixed plotting when only one variation (ex. avg_fitness) is plotted
 * Added generation argument to Algorithm.perform_generation 

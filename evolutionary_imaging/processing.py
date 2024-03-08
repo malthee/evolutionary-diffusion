@@ -36,6 +36,17 @@ def parse_fitness_from_filename(filename: str) -> Fitness:
     return 0.0
 
 
+def parse_id_from_filename(filename: str) -> Optional[int]:
+    """
+    Match "id_" followed by one or more groups of one or more digits
+    Returns None if no match
+    """
+    match = re.search(r"id_(\d+)_", filename)
+    if match:
+        return int(match.group(1))
+    return None
+
+
 def fitness_filename_sorting_key(filename: str) -> float:
     """
     Sorting key for filenames based on fitness. Used to sort images by fitness.
@@ -48,7 +59,7 @@ def fitness_filename_sorting_key(filename: str) -> float:
 
 
 def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSolutionData, Fitness]],
-                                generation: int, id_prefix: Optional[str] = None) -> None:
+                                generation: int, ident: Optional[int] = None) -> None:
     """
     Saves images from a given generation of solution candidates to the RESULTS folder with a sub-folder for
     the generation.
@@ -56,8 +67,8 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
     Args:
     - population (List[SolutionCandidate[Any, ImageSolutionData]]): The population of solution candidates.
     - generation (int): The current generation number.
-    - id_prefix (Optional[str]): A prefix to add to the filenames of the images. Useful for distinguishing between
-    algorithms.
+    - ident (Optional[int]): An id to add to the filename id_xxx. Useful for distinguishing between
+    algorithms. Must be positive.
     """
     generation_dir = os.path.join(RESULTS_FOLDER, str(generation))
     os.makedirs(generation_dir, exist_ok=True)
@@ -73,14 +84,15 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
 
         for i, image in enumerate(image_solution_data.images):
             image_name = f"{index}_{i}_fitness_{fitness_str}.png"
-            if id_prefix:
-                image_name = f"{id_prefix}_{image_name}"
+            if ident is not None:
+                image_name = f"id_{ident}_{image_name}"
             image_path = os.path.join(generation_dir, image_name)
             image.save(image_path)
 
 
 def create_generation_image_grid(generation: int, images_per_row: int = 5, max_images: Optional[int] = None,
-                                 save_to_folder: bool = True) -> plt.Figure:
+                                 label_fontsize: int = 16,
+                                 save_to_folder: bool = True, ident_mapper: Optional[list] = None) -> plt.Figure:
     """
     Creates a grid of images from a specific generation.
     Recommend for single-objective optimization or multi-objective optimization with 2 objectives.
@@ -93,6 +105,8 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
     will be included.
     - safe_to_folder (bool): Whether to save the figure to the generation folder. If False, the figure will only
     be returned
+    - ident_mapper (Optional[dict]): A list mapping candidate indices to identifiers. If provided, the identifiers
+    will be used as labels for the images in the grid.
 
     Returns:
     - plt.Figure: The matplotlib figure object containing the image grid.
@@ -128,9 +142,13 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
         ax.imshow(img)
         ax.axis('off')
         fitness = parse_fitness_from_filename(img_file)
+        ident = parse_id_from_filename(img_file)
         # Fitness may be single or multi-objective
-        ax.set_title(f"{fitness:.3f}" if not isinstance(fitness, list)
-                     else ", ".join(f"{fit:.1f}" for fit in fitness), fontsize=16)
+        fitness_str = f"{fitness:.3f}" if not isinstance(fitness, list) else ", ".join(f"{fit:.1f}" for fit in fitness)
+        # Optionally add identifier to the fitness string
+        if ident is not None and ident_mapper is not None:
+            fitness_str = ident_mapper[ident] + "\n" + fitness_str
+        ax.set_title(fitness_str, fontsize=label_fontsize)
 
     plt.tight_layout(pad=1.5)
     if save_to_folder:
