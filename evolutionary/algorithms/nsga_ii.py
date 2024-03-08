@@ -36,7 +36,9 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
                  initial_arguments: List[A],
                  elitism_count: Optional[int] = None,
                  normalize_crowding_distance: bool = True,
-                 post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None):
+                 post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
+                 # Called after fronts are sorted
+                 post_non_dominated_sort_callback: Optional[Algorithm.GenerationCallback] = None):
         super().__init__(
             num_generations=num_generations,
             population_size=population_size,
@@ -51,6 +53,7 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         self._elitism_count = elitism_count
         # Normalize objective values, so they contribute equally to crowding distance calculation.
         self._normalize_crowding_distance = normalize_crowding_distance
+        self._post_non_dominated_sort_callback = post_non_dominated_sort_callback
         self._population: List[NSGASolutionCandidate] = []  # Override the type to NSGA-II's solution candidate
         self._fronts = [[]]
 
@@ -118,12 +121,24 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         del self._population
         self._population = new_population
 
-    def perform_generation(self):
+    def perform_generation(self, generation: int):
         self._fast_non_dominated_sort()
+        if self._post_non_dominated_sort_callback:
+            self._post_non_dominated_sort_callback(generation, self)
         self._calculate_crowding_distance()
         self._sort_and_trim()
         self._crossover_and_mutation()
 
     def best_solution(self) -> NSGASolutionCandidate:
+        self._fast_non_dominated_sort()
+        # Sort for last generation one more time
+        if self._post_non_dominated_sort_callback:
+            self._post_non_dominated_sort_callback(self.num_generations - 1, self)
+
+        self._calculate_crowding_distance()
         # Take the solution with the highest crowding distance in the first front
         return max(self._fronts[0], key=lambda x: x.crowding_distance)
+
+    @property
+    def fronts(self):
+        return self._fronts

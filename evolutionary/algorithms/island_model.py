@@ -63,7 +63,7 @@ class IslandModel:
                 continue
 
             for island in self._islands:
-                island.perform_generation()
+                island.perform_generation(generation)
 
             if generation % self._migration_interval == 0:
                 self._migrate()

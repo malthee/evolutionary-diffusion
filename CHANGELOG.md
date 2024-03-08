@@ -1,5 +1,10 @@
 # Changelog for the evolutionary package
-## 0.2.2 (06.03.2024)
+### 0.2.3 (08.03.2024)
+* Fixed plotting when only one variation (ex. avg_fitness) is plotted
+* Added generation argument to Algorithm.perform_generation 
+* NSGA now supports callback after NDS 
+
+### 0.2.2 (06.03.2024)
 * Fixed imports, structure to work with colab
 
 ## 0.2.0 (06.03.2024)

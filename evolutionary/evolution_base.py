@@ -215,7 +215,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         return self._population
 
     @abstractmethod
-    def perform_generation(self):
+    def perform_generation(self, generation: int):
         """
         Run a single generation of the algorithm.
         The population should be evaluated beforehand.
@@ -249,6 +249,6 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
             if generation == self.num_generations - 1:
                 continue
 
-            self.perform_generation()
+            self.perform_generation(generation)
 
         return self.best_solution()

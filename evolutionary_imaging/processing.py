@@ -1,4 +1,7 @@
-from typing import List, Any, Optional
+from math import pi
+from typing import List, Any, Optional, Tuple
+
+import numpy as np
 from PIL import Image
 from evolutionary.evolution_base import SolutionCandidate, Fitness
 from evolutionary_imaging.image_base import ImageSolutionData
@@ -77,11 +80,11 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
 
 
 def create_generation_image_grid(generation: int, images_per_row: int = 5, max_images: Optional[int] = None,
-                                 safe_to_folder: bool = True) -> plt.Figure:
+                                 save_to_folder: bool = True) -> plt.Figure:
     """
     Creates a grid of images from a specific generation.
     Recommend for single-objective optimization or multi-objective optimization with 2 objectives.
-    Otherwise, use create_generation_radar_charts().
+    Otherwise, use create_generation_radar_chart_grid().
 
     Args:
     - generation (int): The generation number for which to create the image grid. Used as the title.
@@ -130,14 +133,88 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
                      else ", ".join(f"{fit:.1f}" for fit in fitness), fontsize=16)
 
     plt.tight_layout(pad=1.5)
-    if safe_to_folder:
+    if save_to_folder:
         plt.savefig(output_filepath)
     plt.close(fig)
     return fig
 
 
-def create_generation_radar_charts():
-    pass  # TODO implement radar charts for multi-objective optimization
+def _plot_radar_chart(ax: plt.Axes, scores: List[float], labels: List[str],
+                      label_fontsize: int, label_padding: int) -> None:
+    num_vars = len(scores)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    scores += scores[:1]  # Complete the loop by duplicating the first score at the end
+    angles += angles[:1]  # Complete the loop for angles
+
+    ax.fill(angles, scores, color='red', alpha=0.25)
+    ax.plot(angles, scores, color='red', linewidth=2)
+    ax.set_xticks(angles[:-1])
+
+    ax.set_xticklabels(labels, fontsize=label_fontsize)
+    ax.tick_params(axis='x', which='major', pad=label_padding)
+    ax.set_yticklabels([])
+
+
+def create_generation_radar_chart_grid(generation: int, descriptors: Tuple[str, ...], images_per_row: int = 2,
+                                       label_fontsize: int = 8, label_padding: int = 10,
+                                       max_images: Optional[int] = None, save_to_folder: bool = True) -> plt.Figure:
+    """
+    Creates a grid of images from a specific generation, each accompanied by a radar chart
+    visualizing multi-objective fitness values.
+
+    Args:
+    - generation (int): The generation number for which to create the grid.
+    - descriptors (Tuple[str]): Descriptors for the radar chart, corresponding to fitness objectives.
+    - images_per_row (int): Number of image-radar chart pairs per row in the grid.
+    - max_images (Optional[int]): Maximum number of image-radar chart pairs to include in the grid.
+    - save_to_folder (bool): Whether to save the figure to the generation folder.
+
+    Returns:
+    - plt.Figure: The matplotlib figure object containing the grid.
+    """
+    generation_dir = os.path.join(RESULTS_FOLDER, f"{generation}")
+    output_filepath = os.path.join(generation_dir, f"grid_{generation}.png")
+
+    # Cleanup previous file if exists
+    if os.path.exists(output_filepath):
+        os.remove(output_filepath)
+
+    # Gather and sort image files by fitness
+    image_files = glob.glob(os.path.join(generation_dir, "*.png"))
+    image_files.sort(key=fitness_filename_sorting_key, reverse=True)
+
+    if max_images is not None:
+        image_files = image_files[:max_images]
+
+    total_items = len(image_files)
+    total_rows = (total_items + images_per_row - 1) // images_per_row
+    fig = plt.figure(figsize=(images_per_row * 6, total_rows * 3.5))  # Adjust figsize as needed
+
+    for idx in range(images_per_row * 2 * total_rows):
+        col_idx = idx % (images_per_row * 2)  # Determine current column in the grid
+
+        # Check if the current index corresponds to an available image file
+        if idx // 2 < len(image_files):
+            if col_idx % 2 == 0:  # Even index, plot image
+                img_file = image_files[idx // 2]
+                img_ax = fig.add_subplot(total_rows, images_per_row * 2, idx + 1)
+                img = mpimg.imread(img_file)
+                img_ax.imshow(img)
+                img_ax.axis('off')
+            else:  # Odd index, plot radar chart if there's a corresponding image
+                fitness = parse_fitness_from_filename(image_files[idx // 2])
+                scores = fitness if isinstance(fitness, list) else [fitness for _ in range(len(descriptors))]
+                radar_ax = fig.add_subplot(total_rows, images_per_row * 2, idx + 1, polar=True)
+                _plot_radar_chart(radar_ax, scores, list(descriptors), label_fontsize, label_padding)
+        else:
+            fig.add_subplot(total_rows, images_per_row * 2, idx + 1).axis('off')  # Hide unused plots
+
+    fig.suptitle(f"Generation {generation}", fontsize=20)
+    plt.tight_layout(rect=(0, 0, 1, 0.98))
+    if save_to_folder:
+        plt.savefig(output_filepath)
+    plt.close(fig)
+    return fig
 
 
 def create_animation_from_generations(num_generations: int, output_file: str = "evolution.mp4",
