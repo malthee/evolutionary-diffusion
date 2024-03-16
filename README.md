@@ -1,6 +1,13 @@
 # Evolutionary-Diffusion
 *Combining Evolutionary Computing with Diffusion Models*
 
+Evolutionary Algorithms & Diffusion Models Optimization:
+🎨 Aesthetics Maximization/Minimization using [LAION Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor)
+📊 Multi-Objective Optimization with CLIP-IQA metrics
+🛡️ Evading AI-Image Detection by optimizing against a [fine-tuned SDXL AI-Image-Detector](https://huggingface.co/Organika/sdxl-detector)
+🧭 Navigating the CLIP-Score Landscape for Prompt-Matching
+
+
 Goals: Augment the process of art generation, improve A-to-I ratio, explore possibilities of combination, optimize and automize.
 
 ## Try it out in Google Colab
