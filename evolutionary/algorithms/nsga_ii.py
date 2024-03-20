@@ -35,9 +35,10 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
                  evaluator: MultiObjectiveEvaluator[R],
                  initial_arguments: List[A],
                  elitism_count: Optional[int] = None,
-                 normalize_crowding_distance: bool = True,
+                 # Set to true if you are dealing with objectives with different scales
+                 normalize_crowding_distance: bool = False,
                  post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
-                 # Called after fronts are sorted
+                 # Called after fronts are sorted, can access fronts through self.fronts
                  post_non_dominated_sort_callback: Optional[Algorithm.GenerationCallback] = None):
         super().__init__(
             num_generations=num_generations,
@@ -136,8 +137,31 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
             self._post_non_dominated_sort_callback(self.num_generations - 1, self)
 
         self._calculate_crowding_distance()
-        # Take the solution with the highest crowding distance in the first front
-        return max(self._fronts[0], key=lambda x: x.crowding_distance)
+
+        # When normalization enabled, take best normalized solution
+        if self._normalize_crowding_distance:
+            # Fitness range (best, worst) for each objective
+            normalization_params = [
+                (self._fronts[0][0].fitness[i], self._fronts[0][-1].fitness[i])
+                for i in range(len(self._fronts[0][0].fitness))
+            ]
+
+            # Calculate the sum of normalized fitness values for each solution in the first front
+            normalized_fitness_sums = [
+                sum(
+                    (solution.fitness[i] - min_fitness) / (max_fitness - min_fitness)
+                    if max_fitness > min_fitness else 0
+                    for i, (min_fitness, max_fitness) in enumerate(normalization_params)
+                )
+                for solution in self._fronts[0]
+            ]
+
+            # Find the solution with the highest sum of normalized fitness values
+            best_index = normalized_fitness_sums.index(max(normalized_fitness_sums))
+            return self._fronts[0][best_index]
+        else:
+            # If not normalizing, simply take the solution with the highest sum of fitness values
+            return max(self._fronts[0], key=lambda x: sum(x.fitness))
 
     @property
     def fronts(self):
