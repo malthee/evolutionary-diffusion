@@ -1,4 +1,7 @@
 # Changelog for the evolutionary package
+### 0.2.5 (20.03.2024)
+* NSGA-II now returns result which has the best fitness sum with optional normalization
+
 ### 0.2.4 (08.03.2024)
 * Add optional identifiers to image-saving do differentiate between islands in the island modal
 
