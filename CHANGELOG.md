@@ -1,4 +1,7 @@
 # Changelog for the evolutionary package
+### 0.2.6 (22.03.2024)
+* NSGA-II can now use a binary tournament selection for the selection of parents
+
 ### 0.2.5 (20.03.2024)
 * NSGA-II now returns result which has the best fitness sum with optional normalization
 
