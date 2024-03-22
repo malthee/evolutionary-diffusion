@@ -10,6 +10,7 @@ class TournamentSelector(Selector[SingleObjectiveFitness]):
         Args:
             tournament_size (int): Number of individuals in each tournament.
         """
+        assert tournament_size > 1, "Tournament size must be greater than 1."
         self.tournament_size = tournament_size
 
     def select(self, candidates: List[SolutionCandidate]) -> SolutionCandidate:
@@ -25,6 +26,7 @@ class RankSelector(Selector[SingleObjectiveFitness]):
         Args:
             selection_pressure (float): Determines bias towards higher-ranked individuals.
         """
+        assert selection_pressure > 1.0, "Selection pressure must be greater than 1."
         self.selection_pressure = selection_pressure
 
     def select(self, candidates: List[SolutionCandidate]) -> SolutionCandidate:

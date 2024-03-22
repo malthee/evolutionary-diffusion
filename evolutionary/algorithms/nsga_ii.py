@@ -1,3 +1,4 @@
+import random
 from typing import List, Optional
 
 from evolutionary.evolution_base import Algorithm, A, R, MultiObjectiveFitness, SolutionCreator, Selector, Mutator, \
@@ -11,6 +12,20 @@ class NSGASolutionCandidate(SolutionCandidate[A, R, MultiObjectiveFitness]):
         self.dominated_solutions = []
         self.rank = None
         self.crowding_distance = 0
+
+
+class NSGATournamentSelector(Selector[MultiObjectiveFitness]):
+    """
+    Binary-Tournament selection for NSGA-II based on rank and crowding distance.
+    """
+
+    def select(self, candidates: List[NSGASolutionCandidate]) -> NSGASolutionCandidate:
+        candidate_a, candidate_b = random.sample(candidates, 2)
+
+        if candidate_a.rank == candidate_b.rank:  # If ranks are equal, decide by crowding distance
+            return candidate_a if candidate_a.crowding_distance > candidate_b.crowding_distance else candidate_b
+        else:  # Else, decide by rank
+            return candidate_a if candidate_a.rank < candidate_b.rank else candidate_b
 
 
 def _dominates(individual1, individual2):
