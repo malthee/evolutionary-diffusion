@@ -1,14 +1,16 @@
 import random
-from typing import List
+from typing import List, Literal
 from tqdm import tqdm
 from evolutionary.evolution_base import Algorithm, A, R, Fitness, SolutionCandidate
 
 
 class IslandModel:
-    def __init__(self, algorithms: List[Algorithm[A, R, Fitness]], migration_interval: int, migration_size: int):
+    def __init__(self, algorithms: List[Algorithm[A, R, Fitness]], migration_interval: int, migration_size: int,
+                 topology: Literal['ring', 'random'] = 'ring'):
         self._islands = algorithms
         self._migration_interval = migration_interval
         self._migration_size = migration_size
+        self._topology = topology
         assert migration_interval > 0, "Migration interval must be greater than 0"
         assert migration_size > 0, "Migration size must be greater than 0"
         assert len(self._islands) > 1, "Island model requires at least 2 islands"
@@ -23,6 +25,9 @@ class IslandModel:
             How many generations to wait before migrating individuals between islands.
         migration_size : int
             How many individuals to migrate in total in each migration event.
+        topology : Literal['ring', 'random']
+            The migration topology of the islands. 'ring' means that each island is connected to its neighbors in a ring.
+            'random' means that each island can migrate to any other island.
         """
 
     def _migrate(self):
@@ -32,7 +37,15 @@ class IslandModel:
         This could be enhanced with replacement strategies, like taking the best ones from the source island etc.
         """
         for _ in range(self._migration_size):
-            source_island, destination_island = random.sample(self._islands, 2)
+            if self._topology == 'ring':
+                source_index = random.randrange(len(self._islands))
+                source_island = self._islands[source_index]
+                destination_index = (source_index + 1) % len(self._islands)
+                destination_island = self._islands[destination_index]
+            elif self._topology == 'random':
+                source_island, destination_island = random.sample(self._islands, 2)
+            else:
+                raise ValueError(f"Invalid topology: {self._topology}")
 
             migrant = random.choice(source_island.population)
             source_island.population.remove(migrant)  # Remove migrant from source island

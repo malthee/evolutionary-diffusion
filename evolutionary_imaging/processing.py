@@ -91,11 +91,11 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
 
 
 def create_generation_image_grid(generation: int, images_per_row: int = 5, max_images: Optional[int] = None,
-                                 label_fontsize: int = 16,
-                                 save_to_folder: bool = True, ident_mapper: Optional[list] = None) -> plt.Figure:
+                                 label_fontsize: int = 16, save_to_folder: bool = True,
+                                 ident_mapper: Optional[list] = None, group_by_ident: bool = False) -> plt.Figure:
     """
-    Creates a grid of images from a specific generation.
-    Recommend for single-objective optimization or multi-objective optimization with 2 objectives.
+    Creates a grid of images from a specific generation showcasing the image and its fitness and optional identifier.
+    Recommend for single-objective optimization or multi-objective optimization with <=2 objectives.
     Otherwise, use create_generation_radar_chart_grid().
 
     Args:
@@ -103,14 +103,17 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
     - images_per_row (int): Number of images per row in the grid.
     - max_images (int): Maximum number of images to include in the grid. If None, all images in the generation folder
     will be included.
+    - label_fontsize (int): Font size for the fitness/text labels.
     - safe_to_folder (bool): Whether to save the figure to the generation folder. If False, the figure will only
     be returned
     - ident_mapper (Optional[dict]): A list mapping candidate indices to identifiers. If provided, the identifiers
     will be used as labels for the images in the grid.
+    - group_by_ident (bool): If True, best images will be grouped by identifier in the grid. Requires ident_mapper.
 
     Returns:
     - plt.Figure: The matplotlib figure object containing the image grid.
     """
+    assert not group_by_ident or ident_mapper is not None, "Grouping by identifier requires an identifier mapper."
     generation_dir = os.path.join(RESULTS_FOLDER, f"{generation}")
 
     # Delete plot if already exists
@@ -120,6 +123,15 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
 
     image_files = glob.glob(os.path.join(generation_dir, "*.png"))
     image_files.sort(key=fitness_filename_sorting_key, reverse=True)
+    # When grouping by identifier, take the best (first) one for each identifier
+    if group_by_ident:
+        grouped_images = {}
+        for img_file in image_files:
+            ident = parse_id_from_filename(img_file)
+            if ident not in grouped_images:
+                grouped_images[ident] = img_file
+        # Sort output by the identifier string, so the order is consistent over generations
+        image_files = [value for key, value in sorted(grouped_images.items(), key=lambda x: x[0])]
 
     if max_images is not None:
         image_files = image_files[:max_images]
@@ -158,11 +170,15 @@ def create_generation_image_grid(generation: int, images_per_row: int = 5, max_i
 
 
 def _plot_radar_chart(ax: plt.Axes, scores: List[float], labels: List[str],
-                      label_fontsize: int, label_padding: int) -> None:
+                      label_fontsize: int, label_padding: int, max_value: Optional[float] = None) -> None:
     num_vars = len(scores)
     angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
     scores += scores[:1]  # Complete the loop by duplicating the first score at the end
     angles += angles[:1]  # Complete the loop for angles
+
+    if max_value is not None:
+        # Set the y-axis (radial axis) limit if max_value is provided
+        ax.set_ylim(0, max_value)
 
     ax.fill(angles, scores, color='red', alpha=0.25)
     ax.plot(angles, scores, color='red', linewidth=2)
@@ -175,7 +191,8 @@ def _plot_radar_chart(ax: plt.Axes, scores: List[float], labels: List[str],
 
 def create_generation_radar_chart_grid(generation: int, descriptors: Tuple[str, ...], images_per_row: int = 2,
                                        label_fontsize: int = 8, label_padding: int = 10,
-                                       max_images: Optional[int] = None, save_to_folder: bool = True) -> plt.Figure:
+                                       max_value: Optional[float] = None, max_images: Optional[int] = None,
+                                       save_to_folder: bool = True) -> plt.Figure:
     """
     Creates a grid of images from a specific generation, each accompanied by a radar chart
     visualizing multi-objective fitness values.
@@ -184,6 +201,9 @@ def create_generation_radar_chart_grid(generation: int, descriptors: Tuple[str, 
     - generation (int): The generation number for which to create the grid.
     - descriptors (Tuple[str]): Descriptors for the radar chart, corresponding to fitness objectives.
     - images_per_row (int): Number of image-radar chart pairs per row in the grid.
+    - label_fontsize (int): Font size for the radar chart labels.
+    - label_padding (int): Padding for the radar chart labels.
+    - max_value (Optional[float]): Maximum value for the radar chart y-axis. When not set might resize automatically.
     - max_images (Optional[int]): Maximum number of image-radar chart pairs to include in the grid.
     - save_to_folder (bool): Whether to save the figure to the generation folder.
 
@@ -223,7 +243,7 @@ def create_generation_radar_chart_grid(generation: int, descriptors: Tuple[str, 
                 fitness = parse_fitness_from_filename(image_files[idx // 2])
                 scores = fitness if isinstance(fitness, list) else [fitness for _ in range(len(descriptors))]
                 radar_ax = fig.add_subplot(total_rows, images_per_row * 2, idx + 1, polar=True)
-                _plot_radar_chart(radar_ax, scores, list(descriptors), label_fontsize, label_padding)
+                _plot_radar_chart(radar_ax, scores, list(descriptors), label_fontsize, label_padding, max_value)
         else:
             fig.add_subplot(total_rows, images_per_row * 2, idx + 1).axis('off')  # Hide unused plots
 
