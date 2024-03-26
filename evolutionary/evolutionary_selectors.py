@@ -32,6 +32,9 @@ class RankSelector(Selector[SingleObjectiveFitness]):
     def select(self, candidates: List[SolutionCandidate]) -> SolutionCandidate:
         candidates.sort(key=lambda candidate: candidate.fitness, reverse=True)
         total_candidates = len(candidates)
+        if total_candidates == 1:
+            return candidates[0]
+
         rank_weights = [(self.selection_pressure - 2.0 * (self.selection_pressure - 1.0) * (i / (total_candidates - 1)))
                         for i in range(total_candidates)]
         chosen_index = random.choices(range(total_candidates), weights=rank_weights, k=1)[0]

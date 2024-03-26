@@ -1,4 +1,11 @@
 # Changelog for the evolutionary package
+## 0.3.0 (25.03.2024)
+* Added GoalDiminishingEvaluator, CappedEvaluator 
+* Added 'ring' and 'random' topology to the IslandModel to allow control of migration
+* Group-By-Ident visualization for image grid to allow visualization of best image per island
+* Radar chart visualization for multi-objective optimization now supports max-value, so the charts remain the same size
+* Fixed RankSelector division by zero error
+
 ### 0.2.6 (22.03.2024)
 * NSGA-II can now use a binary tournament selection for the selection of parents
 
