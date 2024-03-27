@@ -1,16 +1,20 @@
 import random
-from typing import List, Literal
+from itertools import chain
+from typing import List, Literal, Generic
 from tqdm import tqdm
-from evolutionary.evolution_base import Algorithm, A, R, Fitness, SolutionCandidate
+from evolutionary.evolution_base import A, R, Fitness, SolutionCandidate
+from evolutionary.algorithms.algorithm_base import Algorithm
+from evolutionary.statistics import StatisticsTracker, Stages
 
 
-class IslandModel:
+class IslandModel(Generic[A, R, Fitness]):
     def __init__(self, algorithms: List[Algorithm[A, R, Fitness]], migration_interval: int, migration_size: int,
                  topology: Literal['ring', 'random'] = 'ring'):
         self._islands = algorithms
         self._migration_interval = migration_interval
         self._migration_size = migration_size
         self._topology = topology
+        self._statistics = StatisticsTracker()
         assert migration_interval > 0, "Migration interval must be greater than 0"
         assert migration_size > 0, "Migration size must be greater than 0"
         assert len(self._islands) > 1, "Island model requires at least 2 islands"
@@ -68,53 +72,26 @@ class IslandModel:
 
         generations = self._islands[0].num_generations
         for generation in tqdm(range(generations), unit='generation'):
+            self._statistics.start_time_tracking('evaluation')
             for island in self._islands:
                 island.evaluate_population(generation)
+            self._statistics.stop_time_tracking('evaluation')
+            self._statistics.update_fitness(chain.from_iterable(island.population for island in self._islands))
 
             # If this is the last generation, finish here
             if generation == generations - 1:
                 continue
 
+            self._statistics.start_time_tracking('creation')
             for island in self._islands:
                 island.perform_generation(generation)
+            self._statistics.stop_time_tracking('creation')
 
             if generation % self._migration_interval == 0:
                 self._migrate()
 
         return [island.best_solution() for island in self._islands]
 
-    def _island_fitness_aggregated(self, island_fitness_list: List[List[Fitness]]):
-        num_generations = len(island_fitness_list[0])
-
-        if isinstance(island_fitness_list[0][0], list):  # Is multi-objective when first islands fitness values are
-            num_objectives = len(island_fitness_list[0][0])
-            avg_over_time = []
-
-            for gen in range(num_generations):
-                avg_per_objective = [0] * num_objectives
-                for o in range(num_objectives):
-                    avg_per_objective[o] = sum(island[gen][o] for island in island_fitness_list) / len(self._islands)
-                avg_over_time.append(avg_per_objective)
-            return avg_over_time
-
-        else:  # Single-objective
-            return [sum(island[gen] for island in island_fitness_list) / len(self._islands) for gen in
-                    range(num_generations)]
-
     @property
-    def avg_fitness(self):
-        """Average fitness over all islands"""
-        avg_fitness = [island.avg_fitness for island in self._islands]
-        return self._island_fitness_aggregated(avg_fitness)
-
-    @property
-    def worst_fitness(self):
-        """Average worst fitness over all islands"""
-        worst_fitness = [island.worst_fitness for island in self._islands]
-        return self._island_fitness_aggregated(worst_fitness)
-
-    @property
-    def best_fitness(self):
-        """Average best fitness over all islands"""
-        best_fitness = [island.best_fitness for island in self._islands]
-        return self._island_fitness_aggregated(best_fitness)
+    def statistics(self) -> StatisticsTracker:
+        return self._statistics
