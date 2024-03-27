@@ -7,9 +7,9 @@ from typing import Tuple, Union
 
 
 def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 0.05, mutation_strength: float = 0.1,
-                                   clamp_range: Tuple[Union[float, torch.Tensor], Union[float, torch.Tensor]] = (-1, 1)) -> torch.Tensor:
+                                   clamp_range: Tuple[float, float] = (-1, 1)) -> torch.Tensor:
     """
-    Perform a uniform gaussian mutation on the tensor while keeping it on the same device.
+    Perform a uniform gaussian mutation on a tensor, returning a mutated version of the tensor.
 
     Args:
     - tensor (torch.Tensor): The tensor to mutate.
@@ -18,21 +18,24 @@ def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 
     - clamp_range (tuple): A tuple of (min, max) to clamp the mutated values.
 
     Returns:
-    - torch.Tensor: The mutated tensor.
+    - torch.Tensor: The new mutated tensor.
     """
     device = tensor.device
-    num_elements_to_mutate = int(torch.numel(tensor) * mutation_rate)
-    indices_to_mutate = torch.randperm(torch.numel(tensor), device=device)[:num_elements_to_mutate]
+    # Clone the tensor to ensure the original is not modified
+    cloned_tensor = tensor.clone()
+
+    num_elements_to_mutate = int(torch.numel(cloned_tensor) * mutation_rate)
+    indices_to_mutate = torch.randperm(torch.numel(cloned_tensor), device=device)[:num_elements_to_mutate]
 
     mutations = torch.randn(num_elements_to_mutate, device=device) * mutation_strength
-    flat_tensor = tensor.flatten()
+    flat_tensor = cloned_tensor.flatten()
     flat_tensor[indices_to_mutate] += mutations
-    mutated_tensor = flat_tensor.view(tensor.shape)
+    mutated_tensor = flat_tensor.view(cloned_tensor.shape)
 
-    # Ensure clamp_range values are on the correct device if they are tensors
-    clamp_min = clamp_range[0].to(device) if torch.is_tensor(clamp_range[0]) else clamp_range[0]
-    clamp_max = clamp_range[1].to(device) if torch.is_tensor(clamp_range[1]) else clamp_range[1]
+    # Clamp the values of the mutated tensor
+    clamp_min, clamp_max = clamp_range
     mutated_tensor = torch.clamp(mutated_tensor, min=clamp_min, max=clamp_max)
+
     return mutated_tensor
 
 

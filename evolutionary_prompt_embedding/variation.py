@@ -65,9 +65,12 @@ class PooledUniformCrossover(Crossover[PooledPromptEmbedData]):
 class UniformGaussianMutatorArguments:
     def __init__(self, mutation_rate: float, mutation_strength: float, clamp_range: Tuple[float, float]):
         """
-        :param mutation_rate: Rate of elements of the tensor which will have their value changed.
+        Arguments for the uniform gaussian mutator.
+
+        :param mutation_rate: Rate of elements (how many) of the tensor which will have their value changed.
         :param mutation_strength: The strength of the mutation. The value of the mutated element will be changed by a
-        random value from a normal distribution with mean 0 and standard deviation mutation_strength.
+        random value from a normal distribution multiplied with the mutation_strength.
+        :param clamp_range: The range to clamp the values of the mutated tensor to.
         """
         self._mutation_rate = mutation_rate
         self._mutation_strength = mutation_strength
