@@ -31,7 +31,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.2.6',
+    version='0.4.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
@@ -46,7 +46,7 @@ setup(
                      * imaging (evolutionary_imaging): Contains base dependencies for evolutionary image generation, 
                      evaluation and visualization.
                      * model_helpers (evolutionary_model_helpers): Auto-loading different model types on devices. 
-                     With additional utility functions.
+                     With additional utility functions. Variation for tensors.
                      * prompt_embedding (evolutionary_prompt_embedding): Using evolutionary_prompt_embeddings to 
                      generate images and perform evolutionary variation using prompt embeddings.
                      * prompt_embedding_utils (evolutionary_prompt_embedding.utils): Additional utilities for evaluating

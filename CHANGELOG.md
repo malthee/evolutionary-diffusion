@@ -1,4 +1,11 @@
 # Changelog for the evolutionary package
+## 0.4.0 (27.03.2024)
+* Breaking changes to Crossover/Mutation
+  * moved `tensor_variation` to model_helpers.
+  * Mutation does not modify the original tensor anymore
+  * changed parameter names (crossover_rate, to interpolation_weight to avoid confusion)
+* GA, NSGA-II now use `crossover-` and `mutation-rate`
+
 ## 0.3.0 (25.03.2024)
 * Added GoalDiminishingEvaluator, CappedEvaluator 
 * Added 'ring' and 'random' topology to the IslandModel to allow control of migration
