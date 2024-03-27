@@ -1,23 +1,23 @@
 # Evolutionary-Diffusion
 *Combining Evolutionary Computing with Diffusion Models*
 
-Evolutionary Algorithms & Diffusion Models Optimization:
 * 🎨 Aesthetics Maximization/Minimization using [LAION Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor)
 * 📊 Multi-Objective Optimization with CLIP-IQA metrics
 * 🛡️ Evading AI-Image Detection by optimizing against a [fine-tuned SDXL AI-Image-Detector](https://huggingface.co/Organika/sdxl-detector)
 * 🧭 Navigating the CLIP-Score Landscape for Prompt-Matching
 
-
 Goals: Augment the process of art generation, improve A-to-I ratio, explore possibilities of combination, optimize and automize.
 
 ## Try it out in Google Colab
+
 | Notebook                 | Link                                                                                                                                                                                                          |
 |--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Genetic Algorithm        | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/ga_notebook.ipynb)               |
 | Island Genetic Algorithm | [![Island Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/island_ga_notebook.ipynb) |
 | NSGA                     | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/nsga_notebook.ipynb)             |
 
-Or run it locally by just cloning the repository and running the notebooks in the notebooks folder.
+Image results will be saved in your Google Drive in the folder `evolutionary`. Each generation
+creates a new folder where the images will be saved in. You can change the folders in the notebook.
 
 ## Example - Creating the most Aesthetic Image
 
@@ -39,7 +39,7 @@ elitism = 1
 
 creator = SDXLPromptEmbeddingImageCreator(pipeline_factory=setup_pipeline, batch_size=batch_size, inference_steps=3)
 evaluator = AestheticsImageEvaluator()  
-crossover = PooledArithmeticCrossover(crossover_rate=0.5, crossover_rate_pooled=0.5)
+crossover = PooledArithmeticCrossover(0.5, 0.5)
 mutation_arguments = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=2, clamp_range=(-900, 900)) 
 mutation_arguments_pooled = UniformGaussianMutatorArguments(mutation_rate=0.1, mutation_strength=0.3, clamp_range=(-8, 8))
 mutator = PooledUniformGaussianMutator(mutation_arguments, mutation_arguments_pooled)
@@ -85,5 +85,5 @@ These notebooks also allow for simple inference so that any model can be tried o
 * ai_detection_evaluator: uses a pre-trained model for AI image detection. This could be a fitness criteria to minimize "AI-likeness" in images.
 * aesthetics_evaluator: uses a pre-trained model from the maintainers of the LAION image dataset, which scores an image 0-10 depending on how "aesthetic" it is. Could be used as a maximization criteria for the fitness of images.
 * clamp_range: testing the usual prompt-embedding min and max values for different models, so that a CLAMP range can be set in the mutator for example. [Using the parti prompts.](https://github.com/rromb/parti-prompts)https://github.com/rromb/parti-prompts
-
+* crossover_mutation_experiments: testing different crossover and mutation strategies to see how they work in the prompt embedding space
 

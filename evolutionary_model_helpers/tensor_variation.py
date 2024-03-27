@@ -40,29 +40,28 @@ def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 
 
 
 def uniform_crossover_tensors(tensor1: torch.Tensor, tensor2: torch.Tensor,
-                              crossover_rate: float = 0.5) -> torch.Tensor:
+                              swap_rate: float = 0.5) -> torch.Tensor:
     """
-    Perform a uniform crossover operation between two tensors, assuming they are on the same device.
+    Perform a uniform crossover operation between two tensors.
 
     Args:
     - tensor1 (torch.Tensor): The first parent tensor.
     - tensor2 (torch.Tensor): The second parent tensor.
-    - crossover_rate (float): The rate at which elements from the second tensor are introduced into the first.
+    - swap_rate (float): The rate at which elements from the second tensor are introduced into the first.
 
     Returns:
     - torch.Tensor: The resulting tensor after crossover.
     """
-    if tensor1.shape != tensor2.shape:
-        raise ValueError("Both tensors must have the same shape for crossover.")
+    assert tensor1.shape == tensor2.shape, "Both tensors must have the same shape for crossover."
 
-    crossover_mask = torch.rand(tensor1.shape, device=tensor1.device) < crossover_rate
-    offspring = torch.where(crossover_mask, tensor2, tensor1)
+    crossover_mask = torch.rand(tensor1.shape, device=tensor1.device) < swap_rate
+    offspring = torch.where(crossover_mask, tensor1, tensor2)
 
     return offspring
 
 
 def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
-                         crossover_rate: float = 0.5) -> torch.Tensor:
+                         interpolation_weight: float = 0.5) -> torch.Tensor:
     """
     Perform an interpolation-based crossover between two tensors.
 
@@ -75,12 +74,11 @@ def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
     Returns:
     - torch.Tensor: The resulting tensor after interpolation.
     """
-    if tensor1.shape != tensor2.shape:
-        raise ValueError("Both tensors must have the same shape for interpolation.")
+    assert tensor1.shape == tensor2.shape, "Both tensors must have the same shape for crossover."
 
     device = tensor1.device
     tensor2 = tensor2.to(device)
 
-    offspring = tensor1 * crossover_rate + tensor2 * (1 - crossover_rate)
+    offspring = tensor1 * interpolation_weight + tensor2 * (1 - interpolation_weight)
 
     return offspring
