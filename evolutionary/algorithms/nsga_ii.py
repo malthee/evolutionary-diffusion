@@ -1,8 +1,10 @@
 import random
 from typing import List, Optional
 
-from evolutionary.evolution_base import Algorithm, A, R, MultiObjectiveFitness, SolutionCreator, Selector, Mutator, \
-    Crossover, MultiObjectiveEvaluator, SolutionCandidate
+from evolutionary.evolution_base import A, R, MultiObjectiveFitness, SolutionCreator, Selector, Mutator, \
+    Crossover, SolutionCandidate
+from evolutionary.algorithms.algorithm_base import Algorithm
+from evolutionary.evaluators import MultiObjectiveEvaluator
 
 
 class NSGASolutionCandidate(SolutionCandidate[A, R, MultiObjectiveFitness]):

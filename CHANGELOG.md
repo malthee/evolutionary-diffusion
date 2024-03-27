@@ -5,6 +5,8 @@
   * Mutation does not modify the original tensor anymore
   * changed parameter names (crossover_rate, to interpolation_weight to avoid confusion)
 * GA, NSGA-II now use `crossover-` and `mutation-rate`
+* Breaking changes to Fitness-Statistics (avg, best, worst), now own class in `statistics.py`
+* Can now plot time spent on evaluation and creation of individuals
 
 ## 0.3.0 (25.03.2024)
 * Added GoalDiminishingEvaluator, CappedEvaluator 

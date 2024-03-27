@@ -1,9 +1,9 @@
 import random
 from typing import List, Optional
 from evolutionary.evolution_base import (
-    SolutionCandidate, SolutionCreator, Mutator, Crossover, Selector, A, R, Algorithm,
-    SingleObjectiveEvaluator, SingleObjectiveFitness
+    SolutionCandidate, SolutionCreator, Mutator, Crossover, Selector, A, R, SingleObjectiveEvaluator, SingleObjectiveFitness
 )
+from evolutionary.algorithms.algorithm_base import Algorithm
 
 
 class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
@@ -48,7 +48,7 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
                 parent2 = self._selector.select(self._population)
                 offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
             else:
-                offspring_args = parent1.arguments  # No crossover, just clone
+                offspring_args = parent1.arguments  # No crossover, just reuse parent
 
             if random.random() <= self._mutation_rate:
                 offspring_args = self._mutator.mutate(offspring_args)
