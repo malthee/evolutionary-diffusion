@@ -177,9 +177,6 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
     def __init__(self, num_generations: int,
                  population_size: int,
                  solution_creator: SolutionCreator[A, R],
-                 selector: Selector[Fitness],
-                 mutator: Mutator[A],
-                 crossover: Crossover[A],
                  evaluator: Evaluator[R, Fitness],
                  initial_arguments: List[A],
                  post_evaluation_callback: Optional[GenerationCallback] = None):
@@ -189,9 +186,6 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         self._num_generations = num_generations
         self._population_size = population_size
         self._solution_creator = solution_creator
-        self._selector = selector
-        self._mutator = mutator
-        self._crossover = crossover
         self._evaluator = evaluator
         self._initial_arguments = initial_arguments
         self._post_evaluation_callback = post_evaluation_callback

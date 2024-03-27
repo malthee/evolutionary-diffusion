@@ -49,6 +49,8 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
                  crossover: Crossover[A],
                  evaluator: MultiObjectiveEvaluator[R],
                  initial_arguments: List[A],
+                 mutation_rate: float = 0.1,
+                 crossover_rate: float = 0.9,
                  elitism_count: Optional[int] = None,
                  # Set to true if you are dealing with objectives with different scales
                  normalize_crowding_distance: bool = False,
@@ -59,13 +61,15 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
             num_generations=num_generations,
             population_size=population_size,
             solution_creator=solution_creator,
-            selector=selector,
-            mutator=mutator,
-            crossover=crossover,
             evaluator=evaluator,
             initial_arguments=initial_arguments,
             post_evaluation_callback=post_evaluation_callback
         )
+        self._selector = selector
+        self._mutator = mutator
+        self._mutation_rate = mutation_rate
+        self._crossover = crossover
+        self._crossover_rate = crossover_rate
         self._elitism_count = elitism_count
         # Normalize objective values, so they contribute equally to crowding distance calculation.
         self._normalize_crowding_distance = normalize_crowding_distance
@@ -126,14 +130,23 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
 
     def _crossover_and_mutation(self):
         new_population = self._population[:self._elitism_count] if self._elitism_count else []
+
         while len(new_population) < self._population_size:
             parent1 = self._selector.select(self._population)
-            parent2 = self._selector.select(self._population)
-            offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
-            offspring_args = self._mutator.mutate(offspring_args)
+
+            if random.random() <= self._crossover_rate:
+                parent2 = self._selector.select(self._population)
+                offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
+            else:
+                offspring_args = parent1.arguments
+
+            if random.random() <= self._mutation_rate:
+                offspring_args = self._mutator.mutate(offspring_args)
+
             offspring = NSGASolutionCandidate(offspring_args,
                                               self._solution_creator.create_solution(offspring_args).result)
             new_population.append(offspring)
+
         del self._population
         self._population = new_population
 
