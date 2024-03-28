@@ -19,7 +19,8 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
                  mutation_rate: float = 0.1,
                  crossover_rate: float = 0.9,
                  post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
-                 elitism_count: Optional[int] = None):
+                 elitism_count: Optional[int] = None,
+                 strict_osga: bool = False):
         super().__init__(
             num_generations=num_generations,
             population_size=population_size,
@@ -33,6 +34,7 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
         self._mutation_rate = mutation_rate
         self._crossover = crossover
         self._crossover_rate = crossover_rate
+        self._strict_osga = strict_osga  # If True, only better offspring are accepted as defined in OSGA
         self.elitism_count = elitism_count
 
     def perform_generation(self, generation: int):
@@ -43,6 +45,7 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
 
         while len(new_population) < self._population_size:
             parent1 = self._selector.select(self._population)
+            parent2 = None
 
             if random.random() <= self._crossover_rate:
                 parent2 = self._selector.select(self._population)
@@ -54,7 +57,14 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
                 offspring_args = self._mutator.mutate(offspring_args)
 
             offspring = self._solution_creator.create_solution(offspring_args)
-            new_population.append(offspring)
+
+            # Only add offspring if it is better than the worst parent when OSGA strict enabled
+            if self._strict_osga:
+                worst_parent_fitness = min(parent1.fitness, parent2.fitness if parent2 else parent1.fitness)
+                if offspring.fitness > worst_parent_fitness:
+                    new_population.append(offspring)
+            else:
+                new_population.append(offspring)
 
         del self._population
         self._population = new_population
