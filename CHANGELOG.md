@@ -1,4 +1,10 @@
 # Changelog for the evolutionary package
+## 0.4.1 (01.04.2024)
+* Strict OSGA can be enabled in GA
+* ArithmeticCrossover now supports `proportion`, a parameter to control the amount of crossover
+* Statistics time tracking is now handeled by Algorithm implementations. IslandModel uses
+sum of all islands for time statistics.
+
 ## 0.4.0 (27.03.2024)
 * Breaking changes to Crossover/Mutation
   * moved `tensor_variation` to model_helpers.
