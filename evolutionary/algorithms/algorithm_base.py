@@ -10,6 +10,8 @@ from evolutionary.statistics import StatisticsTracker, Stages
 class Algorithm(ABC, Generic[A, R, Fitness]):
     """
     Base class for evolutionary algorithms.
+    When implementing an algorithm, you should subclass this class and implement the abstract methods.
+    Additionally, you should weave in the statistics tracker at the appropriate places.
     """
 
     GenerationCallback = Callable[[int, 'Algorithm[A, R, Fitness]'], None]
@@ -42,7 +44,8 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         """
         self._statistics.start_time_tracking('evaluation')
         for candidate in self._population:
-            candidate.fitness = self._evaluator.evaluate(candidate.result)
+            if candidate.fitness is None:  # Only evaluate if not already done
+                candidate.fitness = self._evaluator.evaluate(candidate.result)
         self._statistics.stop_time_tracking('evaluation')
 
         if self._post_evaluation_callback:
@@ -116,8 +119,6 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
             if generation == self.num_generations - 1:
                 continue
 
-            self._statistics.start_time_tracking('creation')
             self.perform_generation(generation)
-            self._statistics.stop_time_tracking('creation')
 
         return self.best_solution()

@@ -43,18 +43,30 @@ class StatisticsTracker(Generic[Fitness]):
             self._worst_fitness.append(min(fitness_values))
             self._avg_fitness.append(sum(fitness_values) / len(fitness_values))
 
+    def custom_time_tracking(self, stage: Stages, seconds: float):
+        """
+        Manually add a time value for a specific stage.
+        """
+        if stage == "evaluation":
+            self._evaluation_time.append(seconds)
+        elif stage == "creation":
+            self._creation_time.append(seconds)
+        else:
+            raise ValueError("Invalid stage name")
+
     def start_time_tracking(self, stage: Stages):
+        """
+        Start time tracking for a specific stage. Call stop_time_tracking to stop tracking.
+        """
         self._time_trackers[stage] = time()
 
     def stop_time_tracking(self, stage: Stages):
+        """
+        Stop time tracking for a specific stage and store the time taken.
+        """
         self._time_trackers[stage] = time() - self._time_trackers[stage]
 
-        if stage == "evaluation":
-            self._evaluation_time.append(self._time_trackers[stage])
-        elif stage == "creation":
-            self._creation_time.append(self._time_trackers[stage])
-        else:
-            raise ValueError("Invalid stage name")
+        self.custom_time_tracking(stage, self._time_trackers[stage])
 
         self._time_trackers.pop(stage)
 

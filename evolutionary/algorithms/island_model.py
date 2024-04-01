@@ -4,7 +4,25 @@ from typing import List, Literal, Generic
 from tqdm import tqdm
 from evolutionary.evolution_base import A, R, Fitness, SolutionCandidate
 from evolutionary.algorithms.algorithm_base import Algorithm
-from evolutionary.statistics import StatisticsTracker, Stages
+from evolutionary.statistics import StatisticsTracker, TimeList
+
+
+class IslandStatisticsTracker(StatisticsTracker):
+    """
+    Custom StatisticsTracker that overwrites the time properties to return the sum of all islands.
+    """
+
+    def __init__(self, islands: List[Algorithm[A, R, Fitness]]):
+        super().__init__()
+        self._islands = islands
+
+    @property
+    def evaluation_time(self) -> TimeList:
+        return [sum(island.statistics.evaluation_time) for island in self._islands]
+
+    @property
+    def creation_time(self) -> TimeList:
+        return [sum(island.statistics.creation_time) for island in self._islands]
 
 
 class IslandModel(Generic[A, R, Fitness]):
@@ -14,7 +32,7 @@ class IslandModel(Generic[A, R, Fitness]):
         self._migration_interval = migration_interval
         self._migration_size = migration_size
         self._topology = topology
-        self._statistics = StatisticsTracker()
+        self._statistics = IslandStatisticsTracker(self._islands)
         assert migration_interval > 0, "Migration interval must be greater than 0"
         assert migration_size > 0, "Migration size must be greater than 0"
         assert len(self._islands) > 1, "Island model requires at least 2 islands"
@@ -72,20 +90,18 @@ class IslandModel(Generic[A, R, Fitness]):
 
         generations = self._islands[0].num_generations
         for generation in tqdm(range(generations), unit='generation'):
-            self._statistics.start_time_tracking('evaluation')
             for island in self._islands:
                 island.evaluate_population(generation)
-            self._statistics.stop_time_tracking('evaluation')
+
+            # Update statistics with whole population across islands
             self._statistics.update_fitness(chain.from_iterable(island.population for island in self._islands))
 
             # If this is the last generation, finish here
             if generation == generations - 1:
                 continue
 
-            self._statistics.start_time_tracking('creation')
             for island in self._islands:
                 island.perform_generation(generation)
-            self._statistics.stop_time_tracking('creation')
 
             if generation % self._migration_interval == 0:
                 self._migrate()
