@@ -60,8 +60,12 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
 
             # Only add offspring if it is better than the worst parent when OSGA strict enabled
             if self._strict_osga:
-                worst_parent_fitness = min(parent1.fitness, parent2.fitness if parent2 else parent1.fitness)
-                if offspring.fitness > worst_parent_fitness:
+                self._statistics.start_time_tracking('evaluation')
+                offspring.fitness = self._evaluator.evaluate(offspring.result)  # Need to evaluate earlier
+                self._statistics.stop_time_tracking('evaluation')
+
+                worst_parent_fitness = min(parent1.fitness, parent2.fitness) if parent2 is not None else parent1.fitness
+                if offspring.fitness >= worst_parent_fitness:
                     new_population.append(offspring)
             else:
                 new_population.append(offspring)
