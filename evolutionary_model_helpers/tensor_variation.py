@@ -11,11 +11,10 @@ def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 
     """
     Perform a uniform gaussian mutation on a tensor, returning a mutated version of the tensor.
 
-    Args:
-    - tensor (torch.Tensor): The tensor to mutate.
-    - mutation_rate (float): Fraction of elements to mutate (between 0 and 1).
-    - mutation_strength (float): The strength of the mutation, influencing how much each element can change.
-    - clamp_range (tuple): A tuple of (min, max) to clamp the mutated values.
+    :param tensor: (torch.Tensor): The tensor to mutate.
+    :param mutation_rate: (float): Fraction of elements to mutate (between 0 and 1).
+    :param mutation_strength: (float): The strength of the mutation, influencing how much each element can change.
+    :param clamp_range: (tuple): A tuple of (min, max) to clamp the mutated values.
 
     Returns:
     - torch.Tensor: The new mutated tensor.
@@ -45,9 +44,9 @@ def uniform_crossover_tensors(tensor1: torch.Tensor, tensor2: torch.Tensor,
     Perform a uniform crossover operation between two tensors.
 
     Args:
-    - tensor1 (torch.Tensor): The first parent tensor.
-    - tensor2 (torch.Tensor): The second parent tensor.
-    - swap_rate (float): The rate at which elements from the second tensor are introduced into the first.
+    :param tensor1: (torch.Tensor): The first parent tensor.
+    :param tensor2: (torch.Tensor): The second parent tensor.
+    :param swap_rate: (float): The rate at which elements from the second tensor are introduced into the first.
 
     Returns:
     - torch.Tensor: The resulting tensor after crossover.
@@ -61,24 +60,42 @@ def uniform_crossover_tensors(tensor1: torch.Tensor, tensor2: torch.Tensor,
 
 
 def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
-                         interpolation_weight: float = 0.5) -> torch.Tensor:
+                         interpolation_weight: float = 0.5, proportion: float = 1.0) -> torch.Tensor:
     """
     Perform an interpolation-based crossover between two tensors.
 
     Args:
-    - tensor1 (torch.Tensor): The first parent tensor.
-    - tensor2 (torch.Tensor): The second parent tensor.
-    - interpolation_weight (float): The weight for interpolation (between 0 and 1). A weight of 0.5 results in an
+    :param tensor1: (torch.Tensor): The first parent tensor.
+    :param tensor2: (torch.Tensor): The second parent tensor.
+    :param interpolation_weight: (float): The weight for interpolation (between 0 and 1). A weight of 0.5 results in an
       equal blend of both tensors.
+    :param proportion: (float): The proportion of elements to interpolate. If 1.0 then full arithmetic crossover is performed.
 
     Returns:
     - torch.Tensor: The resulting tensor after interpolation.
     """
     assert tensor1.shape == tensor2.shape, "Both tensors must have the same shape for crossover."
+    assert 0 < proportion <= 1, "Proportion must be > 0 and <= 1."
 
     device = tensor1.device
     tensor2 = tensor2.to(device)
 
-    offspring = tensor1 * interpolation_weight + tensor2 * (1 - interpolation_weight)
+    # If proportion is 1, perform full crossover and return immediately
+    if proportion == 1.0:
+        return tensor1 * interpolation_weight + tensor2 * (1 - interpolation_weight)
 
+    # For partial crossover
+    offspring = tensor1.clone()
+    num_elements = tensor1.numel()
+    num_crossover = int(num_elements * proportion)  # Number of elements to apply crossover
+
+    # Randomly choose indices for crossover
+    indices = torch.randperm(num_elements, device=device)[:num_crossover]
+
+    # Apply crossover only to selected indices
+    flat_offspring = offspring.view(-1)
+    flat_tensor1 = tensor1.view(-1)
+    flat_tensor2 = tensor2.view(-1)
+    flat_offspring[indices] = flat_tensor1[indices] * interpolation_weight + flat_tensor2[indices] * (
+                1 - interpolation_weight)
     return offspring
