@@ -68,8 +68,9 @@ def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
     :param tensor1: (torch.Tensor): The first parent tensor.
     :param tensor2: (torch.Tensor): The second parent tensor.
     :param interpolation_weight: (float): The weight for interpolation (between 0 and 1). A weight of 0.5 results in an
-      equal blend of both tensors.
-    :param proportion: (float): The proportion of elements to interpolate. If 1.0 then full arithmetic crossover is performed.
+    equal blend of both tensors.
+    :param proportion: (float): The proportion of elements to interpolate. If 1.0 then full arithmetic crossover
+    is performed. When not selected for crossover, elements are taken from the first tensor.
 
     Returns:
     - torch.Tensor: The resulting tensor after interpolation.
