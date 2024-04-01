@@ -56,7 +56,9 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             if random.random() <= self._mutation_rate:
                 offspring_args = self._mutator.mutate(offspring_args)
 
+            self._statistics.start_time_tracking('creation')
             offspring = self._solution_creator.create_solution(offspring_args)
+            self._statistics.stop_time_tracking('creation')
 
             # Only add offspring if it is better than the worst parent when OSGA strict enabled
             if self._strict_osga:

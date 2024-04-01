@@ -145,8 +145,10 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
             if random.random() <= self._mutation_rate:
                 offspring_args = self._mutator.mutate(offspring_args)
 
+            self._statistics.start_time_tracking('creation')
             offspring = NSGASolutionCandidate(offspring_args,
                                               self._solution_creator.create_solution(offspring_args).result)
+            self._statistics.stop_time_tracking('creation')
             new_population.append(offspring)
 
         del self._population
