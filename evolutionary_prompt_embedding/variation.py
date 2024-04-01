@@ -11,7 +11,7 @@ class ArithmeticCrossover(Crossover[PromptEmbedData]):
         :param interpolation_weight: The weight for interpolation (between 0 and 1). A weight of 0.5 results in an
         equal blend of both tensors. First tensor is multiplied by the weight, second tensor by (1 - weight).
         :param proportion: The proportion of elements to interpolate. If 1.0 then full arithmetic crossover
-        is performed.
+        is performed. When not selected for crossover, elements are taken from the first embedding.
         """
         self._interpolation_weight = interpolation_weight
         self._proportion = proportion
