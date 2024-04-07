@@ -1,5 +1,9 @@
 # Changelog for the evolutionary package
-## 0.4.1 (01.04.2024)
+### 0.4.2 (07.04.2024)
+* added `completed_generations` to `Algorithm` to allow for better access to generations when 
+run was not finished.
+
+### 0.4.1 (01.04.2024)
 * Strict OSGA can be enabled in GA
 * ArithmeticCrossover now supports `proportion`, a parameter to control the amount of crossover
 * Statistics time tracking is now handeled by Algorithm implementations. IslandModel uses

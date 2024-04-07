@@ -33,6 +33,7 @@ class IslandModel(Generic[A, R, Fitness]):
         self._migration_size = migration_size
         self._topology = topology
         self._statistics = IslandStatisticsTracker(self._islands)
+        self._completed_generations = 0
         assert migration_interval > 0, "Migration interval must be greater than 0"
         assert migration_size > 0, "Migration size must be greater than 0"
         assert len(self._islands) > 1, "Island model requires at least 2 islands"
@@ -85,6 +86,8 @@ class IslandModel(Generic[A, R, Fitness]):
         Executes the generations of the islands and migration between them.
         Returns the best solutions from each island.
         """
+        self._completed_generations = 0
+
         for island in self._islands:
             island.create_initial_population()
 
@@ -95,6 +98,7 @@ class IslandModel(Generic[A, R, Fitness]):
 
             # Update statistics with whole population across islands
             self._statistics.update_fitness(chain.from_iterable(island.population for island in self._islands))
+            self._completed_generations = generation + 1
 
             # If this is the last generation, finish here
             if generation == generations - 1:
@@ -109,5 +113,9 @@ class IslandModel(Generic[A, R, Fitness]):
         return [island.best_solution() for island in self._islands]
 
     @property
-    def statistics(self) -> StatisticsTracker:
+    def statistics(self):
         return self._statistics
+
+    @property
+    def completed_generations(self):
+        return self._completed_generations

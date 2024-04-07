@@ -29,6 +29,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         assert population_size > 0, "Population size must be greater than 0"
         assert len(initial_arguments) > 0, "Initial arguments must not be empty"
         self._num_generations = num_generations
+        self._completed_generations = 0
         self._population_size = population_size
         self._solution_creator = solution_creator
         self._evaluator = evaluator
@@ -75,6 +76,10 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         return self._num_generations
 
     @property
+    def completed_generations(self):
+        return self._completed_generations
+
+    @property
     def population_size(self):
         return self._population_size
 
@@ -110,10 +115,12 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         """
         # (Re)-Initialize statistics each run
         self._statistics = StatisticsTracker()
+        self._completed_generations = 0
         self.create_initial_population()
 
         for generation in tqdm(range(self.num_generations), unit='generation'):
             self.evaluate_population(generation)
+            self._completed_generations = generation + 1
 
             # If this is the last generation, finish here
             if generation == self.num_generations - 1:
