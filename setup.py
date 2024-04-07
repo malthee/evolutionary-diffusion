@@ -8,8 +8,7 @@ torch_diffusers_requirements = [
     'Pillow',
 ]
 
-extras_require = {
-    'imaging': [
+imaging_requirements = [
         'imageio',
         'numpy',
         # Used in the Aesthetics model for evaluation
@@ -18,9 +17,12 @@ extras_require = {
         'torchmetrics~=1.3.0',
         'pytorch-lightning~=2.2.0',
         'imageio>=2.33.0',
-    ] + torch_diffusers_requirements,
+]
+
+extras_require = {
+    'imaging': torch_diffusers_requirements + imaging_requirements,
     'model_helpers': torch_diffusers_requirements,
-    'prompt_embedding': torch_diffusers_requirements,
+    'prompt_embedding': torch_diffusers_requirements + imaging_requirements,
     'prompt_embedding_utils': [
         'datasets~=2.16.0',
     ] + torch_diffusers_requirements,
@@ -31,7 +33,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.4.1',
+    version='0.4.2',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
