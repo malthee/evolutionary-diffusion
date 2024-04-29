@@ -23,12 +23,10 @@ creates a new folder where the images will be saved in. You can change the folde
 
 ### Optimizing for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA and SDXL-Turbo
 Optimizing the aesthetics predictor as a maximization problem, the algorithm came to a max Aesthetics score of **8.67**.
-This score is higher than [the examples from the real LAION English Subset dataset have](http://captions.christoph-schuhmann.de/aesthetic_viz_laion_sac+logos+ava1-l14-linearMSE-en-2.37B.html).
+This score is higher than [the examples from the real LAION English Subset dataset have](http://captions.christoph-schuhmann.de/aesthetic_viz_laion_sac+logos+ava1-l14-linearMSE-en-2.37B.html), with the red line showing the limit.
 A wide variety of prompts (inspired by parti prompts) was used for the initial population.
 
-https://github.com/malthee/evolutionary-diffusion-results/assets/18032233/4841d671-639a-4ac4-b7a8-ee5a66fab28d
-
-![Ga200Gen100PopFitnessChartAesthetics](https://github.com/malthee/evolutionary-diffusion-results/blob/main/single_objective/aesthetics/ga_200gen_100pop_aesthetic.png)
+![Ga200Gen100PopFitnessChartAesthetics](https://github.com/malthee/evolutionary-diffusion/assets/18032233/9afe41f2-6ee8-4af0-bed1-2b0a77df6f3e)
 
 Parameters: 
 ```python
@@ -65,16 +63,14 @@ https://github.com/malthee/evolutionary-diffusion-results
 * AIDetectionImageEvaluator: Using the [original Version from HuggingFace](https://huggingface.co/umm-maybe/AI-image-detector), or the [fine-tuned one for SDXL generated images](https://huggingface.co/Organika/sdxl-detector)
 
 ## Image Creators
-The first experiments were made with PromptEmbeddingImageCreators, which extract the 
-logic of text tokenization and encoding from the DiffusionPipeline. This allows
-the evolutionary algorithm to move in the prompt embedding space. Other possible 
-image creators could work with prompts themselves, as a form of Genetic Programming or also
-with image embeddings. Current supported creators:
+Current supported creators working in the prompt embedding space:
 * SDXLPromptEmbeddingImageCreator: Supports the SDXL pipeline, creates both prompt- and pooled-prompt-embeddings.
 * SDPromptEmbeddingImageCreator: Only has prompt-embeddings, is faster but produces less quality results than SDXL.
 
-## Class Diagrams
-TODO
+## Package Structure and Base Classes
+![Package Diagram](https://github.com/malthee/evolutionary-diffusion/assets/18032233/4943b577-faa9-45ce-8f8a-b781e65734be)
+
+![Solution Candidate Class Diagram](https://github.com/malthee/evolutionary-diffusion/assets/18032233/3f334c9c-b5b2-4ecc-914f-485e89fada32)
 
 ## (Pre-Testing) Evaluating Models for Evolutionary use
 There are multiple notebooks exploring the speed and quality of models for generation and fitness-evaluation. 
