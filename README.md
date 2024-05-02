@@ -6,8 +6,6 @@
 * 🛡️ Evading AI-Image Detection by optimizing against a [fine-tuned SDXL AI-Image-Detector](https://huggingface.co/Organika/sdxl-detector)
 * 🧭 Navigating the CLIP-Score Landscape for Prompt-Matching
 
-Goals: Augment the process of art generation, improve A-to-I ratio, explore possibilities of combination, optimize and automize.
-
 ## Try it out in Google Colab
 
 | Notebook                 | Link                                                                                                                                                                                                          |
@@ -26,7 +24,10 @@ Optimizing the aesthetics predictor as a maximization problem, the algorithm cam
 This score is higher than [the examples from the real LAION English Subset dataset have](http://captions.christoph-schuhmann.de/aesthetic_viz_laion_sac+logos+ava1-l14-linearMSE-en-2.37B.html), with the red line showing the limit.
 A wide variety of prompts (inspired by parti prompts) was used for the initial population.
 
-![Ga200Gen100PopFitnessChartAesthetics](https://github.com/malthee/evolutionary-diffusion/assets/18032233/9afe41f2-6ee8-4af0-bed1-2b0a77df6f3e)
+https://github.com/malthee/evolutionary-diffusion-results/assets/18032233/4841d671-639a-4ac4-b7a8-ee5a66fab28d  
+
+ ![Ga200Gen100PopFitnessChartAesthetics](https://github.com/malthee/evolutionary-diffusion/assets/18032233/9afe41f2-6ee8-4af0-bed1-2b0a77df6f3e)    
+
 
 Parameters: 
 ```python
@@ -51,6 +52,8 @@ Performing an Island GA by creating random embeddings and mixing them with artis
 | --- | --- | --- | --- |
 | ![Mark Rothko chairs](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/161643_6_0_fitness_5.871.png) | ![Sketching Person Picasso](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/230414_3_0_fitness_6.594.png) | ![Dali Angles Crazy](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/154957_4_0_fitness_5.895.png) | ![Landscape Van Gogh](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/163139_6_0_fitness_6.788.png) |  
 | ![Character Walls Unique](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/193932_8_0_fitness_4.660.png) | ![Pattern Colorful](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/194326_6_0_fitness_4.825.png) | ![Woman Butterfly Landscape](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/055009_5_0_fitness_7.375.png) | ![Green Car City](https://github.com/malthee/evolutionary-diffusion-results/blob/main/interesting_images/island_aesthetics/054934_8_0_fitness_6.767.png)
+
+[More images](https://github.com/malthee/evolutionary-diffusion-results/tree/main/interesting_images)
 
 ## Detailed Results and Notebooks
 More detailed results can be found in a separate repository dedicated to the results of the experiments:
@@ -80,6 +83,6 @@ These notebooks also allow for simple inference so that any model can be tried o
 * clip_evaluators: uses torch metrics with CLIPScore and CLIP IQA. CLIPScore could define the fitness for "prompt fulfillment" or "image alignment" while CLIP IQA has many possible metrics like "quality, brightness, happiness..."
 * ai_detection_evaluator: uses a pre-trained model for AI image detection. This could be a fitness criteria to minimize "AI-likeness" in images.
 * aesthetics_evaluator: uses a pre-trained model from the maintainers of the LAION image dataset, which scores an image 0-10 depending on how "aesthetic" it is. Could be used as a maximization criteria for the fitness of images.
-* clamp_range: testing the usual prompt-embedding min and max values for different models, so that a CLAMP range can be set in the mutator for example. [Using the parti prompts.](https://github.com/rromb/parti-prompts)https://github.com/rromb/parti-prompts
+* clamp_range: testing the usual prompt-embedding min and max values for different models, so that a CLAMP range can be set in the mutator for example. [Using the parti prompts.](https://github.com/rromb/parti-prompts)
 * crossover_mutation_experiments: testing different crossover and mutation strategies to see how they work in the prompt embedding space
 
