@@ -1,4 +1,7 @@
 # Changelog for the evolutionary package
+### 0.4.3 (28.07.2024)
+* Fix `numpy` version to `1.26.4` to avoid `2.0` incompatibility
+
 ### 0.4.2 (07.04.2024)
 * added `completed_generations` to `Algorithm` to allow for better access to generations when 
 run was not finished.
