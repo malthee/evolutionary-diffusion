@@ -10,9 +10,9 @@ instantiates models and pipelines with it.
 
 def auto_clip_device():
     """
-    Since CLIP is not optimized for mps, this will exclude it and otherwise work the same as auto_device()
+    Edit: Causes Problems and has been fixed to CPU on any device. Previously selected CUDA if available.
     """
-    return "cuda" if torch.cuda.is_available() else "cpu"
+    return "cpu"
 
 
 def auto_device():
