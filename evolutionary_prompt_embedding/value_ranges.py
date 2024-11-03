@@ -45,9 +45,9 @@ class SDXLTurboEmbeddingRange(EmbeddingRange):
 
     def __init__(self):
         with resources.path('evolutionary_prompt_embedding.tensors', 'sdxl_turbo_min_tensor.pt') as min_tensor_path:
-            min_values = torch.load(min_tensor_path)
+            min_values = torch.load(min_tensor_path, weights_only=True)
         with resources.path('evolutionary_prompt_embedding.tensors', 'sdxl_turbo_max_tensor.pt') as max_tensor_path:
-            max_values = torch.load(max_tensor_path)
+            max_values = torch.load(max_tensor_path, weights_only=True)
         super().__init__(min_values, max_values)
 
 
@@ -58,9 +58,9 @@ class SDXLTurboPooledEmbeddingRange(EmbeddingRange):
 
     def __init__(self):
         with resources.path('evolutionary_prompt_embedding.tensors', 'sdxl_turbo_min_tensor_pooled.pt') as min_tensor_path:
-            min_values = torch.load(min_tensor_path)
+            min_values = torch.load(min_tensor_path, weights_only=True)
         with resources.path('evolutionary_prompt_embedding.tensors', 'sdxl_turbo_max_tensor_pooled.pt') as max_tensor_path:
-            max_values = torch.load(max_tensor_path)
+            max_values = torch.load(max_tensor_path, weights_only=True)
         super().__init__(min_values, max_values)
 
 
@@ -71,7 +71,7 @@ class SDTurboEmbeddingRange(EmbeddingRange):
 
     def __init__(self):
         with resources.path('evolutionary_prompt_embedding.tensors', 'sd_turbo_min_tensor.pt') as min_tensor_path:
-            min_values = torch.load(min_tensor_path)
+            min_values = torch.load(min_tensor_path, weights_only=True)
         with resources.path('evolutionary_prompt_embedding.tensors', 'sd_turbo_max_tensor.pt') as max_tensor_path:
-            max_values = torch.load(max_tensor_path)
+            max_values = torch.load(max_tensor_path, weights_only=True)
         super().__init__(min_values, max_values)

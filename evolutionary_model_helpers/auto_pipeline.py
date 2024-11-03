@@ -4,7 +4,7 @@ import torch
 
 
 def auto_diffusion_pipeline(model_id, variant="fp16", use_safetensors=True, safety_checker=None,
-                            requires_safety_checker=False, other_arguments=None):
+                            requires_safety_checker=False, torch_dtype=torch.float16, other_arguments=None):
     """
     Helper function to load a model from the HuggingFace model hub and return a pipeline.
     Tries to load the fp16 variant if available.
@@ -15,7 +15,7 @@ def auto_diffusion_pipeline(model_id, variant="fp16", use_safetensors=True, safe
 
     try:
         pipe = DiffusionPipeline.from_pretrained(
-            model_id, torch_dtype=torch.float16, variant=variant,
+            model_id, torch_dtype=torch_dtype, variant=variant,
             use_safetensors=use_safetensors, safety_checker=safety_checker,
             requires_safety_checker=requires_safety_checker,
             **other_arguments
