@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 torch_diffusers_requirements = [
-    'torch~=2.2.0',
-    'diffusers~=0.26.0',
+    'torch~=2.5.1',
+    'diffusers~=0.31.0',
     'transformers~=4.38.0',
-    'accelerate~=0.27.0',
+    'accelerate~=1.1.0',
     'Pillow',
 ]
 
@@ -13,9 +13,9 @@ imaging_requirements = [
         'numpy~=1.26.4',
         # Used in the Aesthetics model for evaluation
         'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33',
-        'torchvision~=0.17.0',
-        'torchmetrics~=1.3.0',
-        'pytorch-lightning~=2.2.0',
+        'torchvision~=0.20.1',
+        'torchmetrics~=1.3.1',
+        'pytorch-lightning~=2.4.0',
         'imageio>=2.33.0',
 ]
 
@@ -24,7 +24,7 @@ extras_require = {
     'model_helpers': torch_diffusers_requirements,
     'prompt_embedding': torch_diffusers_requirements + imaging_requirements,
     'prompt_embedding_utils': [
-        'datasets~=2.16.0',
+        'datasets~=3.1.0',
     ] + torch_diffusers_requirements,
 }
 
@@ -33,7 +33,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.4.3',
+    version='0.5.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
@@ -56,7 +56,7 @@ setup(
                      ''',
     packages=find_packages(),
     install_requires=[
-        'tqdm>=4.66.0',  # For visualizing progress of algorithms
+        "tqdm==4.66.6",  # For visualizing progress of algorithms
         'matplotlib>=3.7',
     ],
     package_data={
