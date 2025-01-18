@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 torch_diffusers_requirements = [
     'torch~=2.5.1',
-    'diffusers~=0.31.0',
-    'transformers~=4.41.0',
-    'accelerate~=1.1.0',
+    'diffusers~=0.32.2',
+    'transformers~=4.48.0',
+    'accelerate~=1.2.1',
     'Pillow',
 ]
 
@@ -56,7 +56,7 @@ setup(
                      ''',
     packages=find_packages(),
     install_requires=[
-        "tqdm==4.66.6",  # For visualizing progress of algorithms
+        "tqdm>=4.66.6",  # For visualizing progress of algorithms
         'matplotlib>=3.7',
     ],
     package_data={
