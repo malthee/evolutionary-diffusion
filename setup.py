@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 torch_diffusers_requirements = [
     'torch~=2.5.1',
     'diffusers~=0.31.0',
-    'transformers~=4.38.0',
+    'transformers~=4.41.0',
     'accelerate~=1.1.0',
     'Pillow',
 ]
@@ -24,7 +24,7 @@ extras_require = {
     'model_helpers': torch_diffusers_requirements,
     'prompt_embedding': torch_diffusers_requirements + imaging_requirements,
     'prompt_embedding_utils': [
-        'datasets~=3.1.0',
+        'datasets~=3.2.0',
     ] + torch_diffusers_requirements,
 }
 
@@ -33,7 +33,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.5.0',
+    version='0.6.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
