@@ -1,5 +1,5 @@
 # Changelog for the evolutionary package
-### 0.6.0 (18.01.2024)
+## 0.6.0 (18.01.2024)
 * Update `transformers` and `datasets` to fix dependency issues with collab
 
 ### 0.4.3 (28.07.2024)
