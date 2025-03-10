@@ -7,6 +7,7 @@ class EmbeddingRange:
     Class to store the value range of an embedding tensor.
     Used to restrict the search space to reasonable values.
     Able to generate random embeddings within the range.
+    Part of the utility suite.
     """
 
     def __init__(self, min_values: torch.Tensor, max_values: torch.Tensor):
