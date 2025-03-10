@@ -1,4 +1,7 @@
 # Changelog for the evolutionary package
+## 0.7.0 (10.03.2025)
+* Added `TensorboardEmbedVisualizer` to allow for easy visualization of embeddings with different algorithms like PCA, UMAP, etc. TensorBoard comes with a lot of functionality for that.
+
 ## 0.6.0 (18.01.2024)
 * Update `transformers`, `diffusers` and `datasets` to fix dependency issues with collab
 

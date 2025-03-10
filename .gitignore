@@ -252,3 +252,7 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 *.xd
 /.idea/copilot
+
+# Vis results of pretesting
+/vis
+/pre-testing/vis
