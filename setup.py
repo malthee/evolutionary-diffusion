@@ -25,6 +25,7 @@ extras_require = {
     'prompt_embedding': torch_diffusers_requirements + imaging_requirements,
     'prompt_embedding_utils': [
         'datasets~=3.2.0',
+        'tensorflow~=2.18.0',
     ] + torch_diffusers_requirements,
 }
 
@@ -33,7 +34,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.6.0',
+    version='0.7.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
@@ -52,7 +53,7 @@ setup(
                      * prompt_embedding (evolutionary_prompt_embedding): Using evolutionary_prompt_embeddings to 
                      generate images and perform evolutionary variation using prompt embeddings.
                      * prompt_embedding_utils (evolutionary_prompt_embedding.utils): Additional utilities for evaluating
-                     prompt embedding range. 
+                     the prompt embedding range or visualizing embeddings using TensorBoard. 
                      ''',
     packages=find_packages(),
     install_requires=[

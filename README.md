@@ -85,4 +85,4 @@ These notebooks also allow for simple inference so that any model can be tried o
 * aesthetics_evaluator: uses a pre-trained model from the maintainers of the LAION image dataset, which scores an image 0-10 depending on how "aesthetic" it is. Could be used as a maximization criteria for the fitness of images.
 * clamp_range: testing the usual prompt-embedding min and max values for different models, so that a CLAMP range can be set in the mutator for example. [Using the parti prompts.](https://github.com/rromb/parti-prompts)
 * crossover_mutation_experiments: testing different crossover and mutation strategies to see how they work in the prompt embedding space
-
+* embedding_relations: experimenting with TensorBoard and integrating it into our embedding model
