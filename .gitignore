@@ -256,3 +256,4 @@ fabric.properties
 # Vis results of pretesting
 /vis
 /pre-testing/vis
+/notebooks/vis

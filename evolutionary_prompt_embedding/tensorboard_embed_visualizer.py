@@ -1,5 +1,6 @@
 import os
-from typing import List, Dict, Tuple, Iterable, TypeVar, Generic, Union, get_args, Optional
+from pathlib import Path
+from typing import List, Dict, Tuple, Iterable, TypeVar, Generic, Union, get_args, Optional, Callable
 
 import torch
 import tensorflow as tf
@@ -16,12 +17,24 @@ LabelType = TypeVar("LabelType", str, List[str])
 METADATA_FILE = "metadata.tsv"
 EMBEDDING_CHECKPOINT = "embedding.ckpt"
 SPRITE_IMAGE = "sprite.png"
+SPRITE_MAX_DIM = 8192  # TensorBoard supports sprites up to 8192x8192 pixels.
+
+from enum import Enum
+
+class EmbeddingVariant(Enum):
+    NORMAL = "embedding_a_normal"
+    POOLED = "embedding_b_pooled"
+    COMBINED_AVG = "embedding_c_combined_avg"
+    COMBINED_APPEND = "embedding_d_combined_append"
+
 
 class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
     """
     Visualizes embeddings in TensorBoard with custom identifiers.
     The user must provide a metadata header (as a str or list of str) which will appear as the first line in the metadata file.
     Part of the utils suite.
+    Warning as for now TensorBoard is limited to 2GB of data in embeddings because of Protobuf limitations.
+    This already had an RFC but did not get implemented yet, and is gated by an is_oss flag https://github.com/tensorflow/community/blob/master/rfcs/20230720-unbound-saved-model.md.
     """
     def __init__(self,
                  metadata_header: LabelType,
@@ -51,34 +64,51 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
 
             self.add_embedding(embedding, label, image_path)
 
-    def _compute_variants(self) -> Dict[str, torch.Tensor]:
+    def _compute_variants(self, include_variants: Iterable[EmbeddingVariant], embeddings: List[EmbedType]) -> Dict[str, torch.Tensor]:
         normal_variants: List[torch.Tensor] = []
         pooled_variants: List[torch.Tensor] = []
         combined_avg_variants: List[torch.Tensor] = []
         combined_append_variants: List[torch.Tensor] = []
-        has_pooled = any(isinstance(emb, PooledPromptEmbedData) for emb in self._embeddings)
+        has_pooled = any(isinstance(emb, PooledPromptEmbedData) for emb in embeddings)
 
         # Compute the embeddings for each variant.
-        for emb in self._embeddings:
+        for emb in embeddings:
             p_embed = emb.prompt_embeds
             normal_flat = p_embed.flatten()
-            normal_variants.append(normal_flat)
+            if EmbeddingVariant.NORMAL in include_variants:
+                normal_variants.append(normal_flat)
             if has_pooled:
                 pooled_embed = emb.pooled_prompt_embeds
                 pooled_flat = pooled_embed.flatten()
-                pooled_variants.append(pooled_flat)
-                avg_token = p_embed.mean(dim=1)
-                combined_avg = torch.cat([avg_token, pooled_embed], dim=-1).flatten()
-                combined_avg_variants.append(combined_avg)
-                combined_append = torch.cat([normal_flat, pooled_flat], dim=0)
-                combined_append_variants.append(combined_append)
+                if EmbeddingVariant.POOLED in include_variants:
+                    pooled_variants.append(pooled_flat)
+                if EmbeddingVariant.COMBINED_AVG in include_variants:
+                    avg_token = p_embed.mean(dim=1)
+                    combined_avg = torch.cat([avg_token, pooled_embed], dim=-1).flatten()
+                    combined_avg_variants.append(combined_avg)
+                if EmbeddingVariant.COMBINED_APPEND in include_variants:
+                    combined_append = torch.cat([normal_flat, pooled_flat], dim=0)
+                    combined_append_variants.append(combined_append)
 
-        # Variants prefixed with abcd for ordering
-        variants: Dict[str, torch.Tensor] = {"embedding_a_normal": torch.stack(normal_variants, dim=0)}
-        if has_pooled and pooled_variants:
-            variants["embedding_b_pooled"] = torch.stack(pooled_variants, dim=0)
-            variants["embedding_c_combined_avg"] = torch.stack(combined_avg_variants, dim=0)
-            variants["embedding_d_combined_append"] = torch.stack(combined_append_variants, dim=0)
+        # Create a dictionary of embedding variants to include in the checkpoint
+        # Stacked to a single tensor
+        variants: Dict[str, torch.Tensor] = {EmbeddingVariant.NORMAL.value: torch.stack(normal_variants, dim=0)}
+        if EmbeddingVariant.NORMAL in include_variants:
+            print("Including default embeddings.")
+            variants[EmbeddingVariant.NORMAL.value] = torch.stack(normal_variants, dim=0)
+
+        if has_pooled:
+            if EmbeddingVariant.POOLED in include_variants:
+                print("Including pooled embeddings.")
+                variants[EmbeddingVariant.POOLED.value] = torch.stack(pooled_variants, dim=0)
+
+            if EmbeddingVariant.COMBINED_AVG in include_variants:
+                print("Including combined average embeddings.")
+                variants[EmbeddingVariant.COMBINED_AVG.value] = torch.stack(combined_avg_variants, dim=0)
+
+            if EmbeddingVariant.COMBINED_APPEND in include_variants:
+                print("Including combined appended embeddings.")
+                variants[EmbeddingVariant.COMBINED_APPEND.value] = torch.stack(combined_append_variants, dim=0)
         return variants
 
     def _save_checkpoint(self, variants: Dict[str, torch.Tensor]) -> Dict[str, tf.Variable]:
@@ -89,25 +119,27 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
         checkpoint = tf.train.Checkpoint(**tf_vars)
         checkpoint_path = os.path.join(self._output_folder, EMBEDDING_CHECKPOINT)
         checkpoint.save(checkpoint_path)
+        total_size = sum(f.stat().st_size for f in Path(self._output_folder).glob(f"{EMBEDDING_CHECKPOINT}*"))
+        size_gb = total_size / (1024 ** 3)
+        print(f"Total saved checkpoint size: {size_gb:.2f} GB")
+        if total_size > 2 * 1024 ** 3:
+            print("Warning: Checkpoint size exceeds 2GB! This checkpoint is unusable in TensorBoard embedding visualization. Consider filtering embeddings.")
         return tf_vars
 
-    def _save_metadata(self) -> None:
+    def _save_metadata(self, labels: List[LabelType]) -> None:
         metadata_file = os.path.join(self._output_folder, METADATA_FILE)
         with open(metadata_file, "w") as f:
             # Write the header line first.
             f.write("\t".join(self._metadata_header) + "\n")
-            for label in self._labels:
+            for label in labels:
                 if isinstance(label, list):
                     safe_label = "\t".join(str(l).replace("\t", " ").replace("\n", " ").strip() for l in label)
                 else:
                     safe_label = str(label).replace("\t", " ").replace("\n", " ").strip()
                 f.write(f"{safe_label}\n")
 
-    def _has_images(self) -> bool:
-        return len(self._image_paths or []) > 0
-
-    def _save_sprite(self, sprite_single_image_dim: Optional[Tuple[int, int]]) -> None:
-        if not self._has_images():
+    def _save_sprite(self, image_paths: List[str], sprite_single_image_dim: Optional[Tuple[int, int]]) -> None:
+        if len(image_paths) == 0:
             return
         # Sprite conversion inspired by https://medium.com/@juanabascal78/exploratory-image-analysis-part-2-embeddings-on-tensorboard-a13a5d4f98b0
         # needs to be done in order to work with TensorBoard
@@ -141,6 +173,11 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
         data = data.reshape((n * data.shape[1], n * data.shape[3]) + data.shape[4:])
         sprite = (data * 255).astype(np.uint8)
         sprite_img = Image.fromarray(sprite)
+
+        if sprite_img.width > SPRITE_MAX_DIM or sprite_img.height > SPRITE_MAX_DIM:
+            print(f"Warning: Generated sprite image size ({sprite_img.width}x{sprite_img.height}) "
+                  f"exceeds the maximum supported size of {SPRITE_MAX_DIM}x{SPRITE_MAX_DIM} for TensorBoard Embedding Projector. "
+                  f"Consider tuning the sprite_single_image_dim parameter.")
         sprite_path = os.path.join(self._output_folder, SPRITE_IMAGE)
         sprite_img.save(sprite_path)
 
@@ -151,30 +188,51 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
             emb_config = config.embeddings.add()
             emb_config.tensor_name = f"{key}/.ATTRIBUTES/VARIABLE_VALUE" # Naming required
             emb_config.metadata_path = METADATA_FILE
-            if self._has_images():
+            if len(self._image_paths) > 0:
                 emb_config.sprite.image_path = SPRITE_IMAGE
                 emb_config.sprite.single_image_dim.extend(sprite_single_image_dim)
         return config
 
-    def generate_visualization(self, sprite_single_image_dim: Optional[Tuple[int, int]]) -> None:
+    def generate_visualization(self, include_variants: Optional[Iterable[EmbeddingVariant]] = None,
+                                sprite_single_image_dim: Optional[Tuple[int, int]] = None,
+                                filter_predicate: Optional[Callable[[EmbedType, LabelType, str], bool]] = None) -> None:
         """
         Generates the visualization for the embeddings in TensorBoard.
+        Allows filtering embedding variants and defining variance_ratio useful for space optimization as browser
+        visualization has shown to have problems with files that are multiple GB.
         Optionally takes a tuple (width, height) for the images in the sprite file. If not provided the images are not used.
+        Embeddings can be filtered using a predicate function that takes the embedding, label, and image path as arguments.
         """
         if not self._embeddings:
             raise ValueError("No embeddings have been added.")
         # Check if lengths match or throw an error
         if len(self._embeddings) != len(self._labels):
             raise ValueError("Number of embeddings and labels do not match.")
-        if sprite_single_image_dim is not None and self._has_images() and len(self._embeddings) != len(self._image_paths):
+        if sprite_single_image_dim is not None and len(self._embeddings) != len(self._image_paths):
             raise ValueError("Number of embeddings and image paths do not match. There are entries without images.")
 
+        if include_variants is None:
+            include_variants = list(EmbeddingVariant) # Default to all variants
+
+        filtered_embeddings: List[EmbedType] = []
+        filtered_labels: List[LabelType] = []
+        filtered_image_paths: List[str] = []
+        if filter_predicate is not None:
+            for emb, lab, img in zip(self._embeddings, self._labels, self._image_paths):
+                if filter_predicate(emb, lab, img):
+                    filtered_embeddings.append(emb)
+                    filtered_labels.append(lab)
+                    filtered_image_paths.append(img)
+        else:
+            filtered_embeddings = self._embeddings
+            filtered_labels = self._labels
+            filtered_image_paths = self._image_paths
+
         os.makedirs(self._output_folder, exist_ok=True)  # Create folder at visualization time.
-        variants = self._compute_variants()
+        variants = self._compute_variants(embeddings=filtered_embeddings, include_variants=include_variants)
         tf_vars = self._save_checkpoint(variants)
-        self._save_metadata()
-        if sprite_single_image_dim is not None: self._save_sprite(sprite_single_image_dim)
-        print("Checkpoint and metadata saved in", self._output_folder)
-        config = self._create_projector_config(tf_vars, sprite_single_image_dim)
-        projector.visualize_embeddings(self._output_folder, config)
+        self._save_metadata(labels=filtered_labels)
+        if sprite_single_image_dim is not None: self._save_sprite(image_paths=filtered_image_paths, sprite_single_image_dim=sprite_single_image_dim)
+        config = self._create_projector_config(tf_vars=tf_vars, sprite_single_image_dim=sprite_single_image_dim)
+        projector.visualize_embeddings(logdir=self._output_folder, config=config)
         print(f"Run 'tensorboard --logdir={self._output_folder}' to visualize your embeddings.")
