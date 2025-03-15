@@ -1,8 +1,10 @@
 # Changelog for the evolutionary package
-## 0.7.0 (STILL IN DRAFT)
+## 0.7.0 (16.03.2025)
 * Added `TensorboardEmbedVisualizer` to allow for easy visualization of embeddings with different algorithms like PCA, UMAP, etc. TensorBoard comes with a lot of functionality for that.
 * `load_torch_model` weights only is now `True`
-* ...
+* `plotting.py` now supports post_evaluation time tracking
+* History of solutions (parents, mutations) now tracked in `statistics.py` with dataclasses in `history.py`
+* Family tree visualization made possible with `graphviz`, updated image `processing.py` and added `family_tree.py`
 
 ## 0.6.0 (18.01.2024)
 * Update `transformers`, `diffusers` and `datasets` to fix dependency issues with collab

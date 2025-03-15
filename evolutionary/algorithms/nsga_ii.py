@@ -5,6 +5,8 @@ from evolutionary.evolution_base import A, R, MultiObjectiveFitness, SolutionCre
     Crossover, SolutionCandidate
 from evolutionary.algorithms.algorithm_base import Algorithm
 from evolutionary.evaluators import MultiObjectiveEvaluator
+from evolutionary.history import SolutionSourceMeta, SOLUTION_SOURCE_META_KEY
+from evolutionary.statistics import SolutionHistoryKey, SolutionHistoryItem
 
 
 class NSGASolutionCandidate(SolutionCandidate[A, R, MultiObjectiveFitness]):
@@ -58,14 +60,16 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
                  normalize_crowding_distance: bool = False,
                  post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
                  # Called after fronts are sorted, can access fronts through self.fronts
-                 post_non_dominated_sort_callback: Optional[Algorithm.GenerationCallback] = None):
+                 post_non_dominated_sort_callback: Optional[Algorithm.GenerationCallback] = None,
+                 ident: Optional[int] = None):
         super().__init__(
             num_generations=num_generations,
             population_size=population_size,
             solution_creator=solution_creator,
             evaluator=evaluator,
             initial_arguments=initial_arguments,
-            post_evaluation_callback=post_evaluation_callback
+            post_evaluation_callback=post_evaluation_callback,
+            ident=ident
         )
         self._selector = selector
         self._mutator = mutator
@@ -130,37 +134,60 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         self._population.sort(key=lambda x: (x.rank, -x.crowding_distance))
         self._population = self._population[:self._population_size]  # Trim to population size
 
-    def _crossover_and_mutation(self):
+    def _crossover_and_mutation(self, generation: int):
         new_population = self._population[:self._elitism_count] if self._elitism_count else []
 
         while len(new_population) < self._population_size:
             parent1 = self._selector.select(self._population)
+            parent1_source_meta: Optional[SolutionSourceMeta] = parent1.meta.get(SOLUTION_SOURCE_META_KEY)
+            # For solution history tracking
+            parent1_history_key = SolutionHistoryKey(
+                index=parent1_source_meta.index if parent1_source_meta else self._population.index(parent1),
+                generation=generation,
+                ident=parent1_source_meta.ident if parent1_source_meta else self.ident
+            )
+
+            mutation_applied = False
+            parent2_history_key = None
 
             if random.random() <= self._crossover_rate:
                 parent2 = self._selector.select(self._population)
+                parent2_source_meta: Optional[SolutionSourceMeta] = parent2.meta.get(SOLUTION_SOURCE_META_KEY)
                 offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
+                parent2_history_key = SolutionHistoryKey(
+                    index=parent2_source_meta.index if parent2_source_meta else self._population.index(parent2),
+                    generation=generation,
+                    ident=parent2_source_meta.ident if parent2_source_meta else self.ident
+                )
             else:
                 offspring_args = parent1.arguments
 
             if random.random() <= self._mutation_rate:
                 offspring_args = self._mutator.mutate(offspring_args)
+                mutation_applied = True
 
             self._statistics.start_time_tracking('creation')
             offspring = NSGASolutionCandidate(offspring_args,
                                               self._solution_creator.create_solution(offspring_args).result)
             self._statistics.stop_time_tracking('creation')
+
+            history_item = SolutionHistoryItem(SolutionHistoryKey(index=len(new_population), generation=self.completed_generations, ident=self.ident),
+                                               mutated=mutation_applied, parent_1=parent1_history_key, parent_2=parent2_history_key)
+
             new_population.append(offspring)
+            self._statistics.add_history_item(history_item)
 
         del self._population
         self._population = new_population
 
     def perform_generation(self, generation: int):
+        self._completed_generations = generation + 1
         self._fast_non_dominated_sort()
         if self._post_non_dominated_sort_callback:
             self._post_non_dominated_sort_callback(generation, self)
         self._calculate_crowding_distance()
         self._sort_and_trim()
-        self._crossover_and_mutation()
+        self._crossover_and_mutation(generation)
 
     def best_solution(self) -> NSGASolutionCandidate:
         self._fast_non_dominated_sort()

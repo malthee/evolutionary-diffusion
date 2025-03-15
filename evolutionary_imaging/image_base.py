@@ -18,7 +18,7 @@ class ImageSolutionData:
 
 
 class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
-    """Base class for image creators. Image creators create image solutions from arguments."""
+    """Base class for DiffusionPipeline image creators. Image creators create image solutions from arguments."""
 
     def __init__(self,
                  model_id: str,

@@ -1,10 +1,10 @@
 import os
-from pathlib import Path
-from typing import List, Dict, Tuple, Iterable, TypeVar, Generic, Union, get_args, Optional, Callable
-
 import torch
 import tensorflow as tf
 import numpy as np
+from pathlib import Path
+from typing import List, Dict, Tuple, Iterable, TypeVar, Generic, Union, get_args, Optional, Callable
+from enum import Enum
 from PIL import Image
 from tensorboard.plugins import projector
 
@@ -20,7 +20,6 @@ SPRITE_IMAGE = "sprite.png"
 SPRITE_MAX_DIM = 8192  # TensorBoard supports sprites up to 8192x8192 pixels.
 DEFAULT_OUTPUT_FOLDER = "vis"
 
-from enum import Enum
 
 class EmbeddingVariant(Enum):
     NORMAL = "embedding_a_normal"
@@ -171,7 +170,7 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
             emb_config = config.embeddings.add()
             emb_config.tensor_name = f"{key}/.ATTRIBUTES/VARIABLE_VALUE" # Naming required
             emb_config.metadata_path = METADATA_FILE
-            if len(self._image_paths) > 0:
+            if len(self._image_paths) > 0 and sprite_single_image_dim is not None:
                 emb_config.sprite.image_path = SPRITE_IMAGE
                 emb_config.sprite.single_image_dim.extend(sprite_single_image_dim)
         return config

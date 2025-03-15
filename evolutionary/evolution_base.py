@@ -6,7 +6,7 @@ The fitness type is generic and can be either a single value or a sequence of va
 optimization.
 By default, uses maximization of fitness values, to minimize a fitness value, use the negative value.
 """
-from typing import Generic, TypeVar, Optional, List, Sequence, Any
+from typing import Generic, TypeVar, Optional, List, Sequence, Any, Dict
 from abc import abstractmethod, ABC
 
 A = TypeVar('A')
@@ -52,6 +52,7 @@ class SolutionCandidate(Generic[A, R, Fitness]):
         self._arguments = arguments
         self._result = result
         self.fitness: Optional[Fitness] = None
+        self.meta: Dict[str, Any] = {}
 
     @property
     def arguments(self) -> A:

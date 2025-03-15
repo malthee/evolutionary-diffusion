@@ -1,10 +1,12 @@
 import random
 from itertools import chain
-from typing import List, Literal, Generic
+from typing import List, Literal, Generic, Dict
 from tqdm import tqdm
+from dataclasses import replace
 from evolutionary.evolution_base import A, R, Fitness, SolutionCandidate
 from evolutionary.algorithms.algorithm_base import Algorithm
-from evolutionary.statistics import StatisticsTracker, TimeList
+from evolutionary.history import SolutionSourceMeta, SOLUTION_SOURCE_META_KEY
+from evolutionary.statistics import StatisticsTracker, TimeList, SolutionHistoryKey, SolutionHistoryItem
 
 
 class IslandStatisticsTracker(StatisticsTracker):
@@ -15,6 +17,7 @@ class IslandStatisticsTracker(StatisticsTracker):
     def __init__(self, islands: List[Algorithm[A, R, Fitness]]):
         super().__init__()
         self._islands = islands
+        self._solution_history_cache = {} # Avoid recalculating history of all islands every time its accessed
 
     @property
     def evaluation_time(self) -> TimeList:
@@ -23,6 +26,24 @@ class IslandStatisticsTracker(StatisticsTracker):
     @property
     def creation_time(self) -> TimeList:
         return [sum(island.statistics.creation_time) for island in self._islands]
+
+    @property
+    def post_evaluation_time(self) -> TimeList:
+        return [sum(island.statistics.post_evaluation_time) for island in self._islands]
+
+    @property
+    def solution_history(self) -> Dict[SolutionHistoryKey, SolutionHistoryItem]:
+        """Combines the solution history of all islands. Cached for performance."""
+        if self._solution_history_cache:
+            return self._solution_history_cache
+
+        combined_history = {}
+        for island in self._islands:
+            combined_history |= island.statistics.solution_history
+        return combined_history
+
+    def reset_solution_history_cache(self):
+        self._solution_history_cache = {}
 
 
 class IslandModel(Generic[A, R, Fitness]):
@@ -55,7 +76,7 @@ class IslandModel(Generic[A, R, Fitness]):
 
     def _migrate(self):
         """
-        Perform random migration of individuals between islands.
+        Perform migration of individuals between islands.
         After this some islands may have fewer individuals than others.
         This could be enhanced with replacement strategies, like taking the best ones from the source island etc.
         """
@@ -71,15 +92,30 @@ class IslandModel(Generic[A, R, Fitness]):
                 raise ValueError(f"Invalid topology: {self._topology}")
 
             migrant = random.choice(source_island.population)
-            source_island.population.remove(migrant)  # Remove migrant from source island
+            migrant_history_key = SolutionHistoryKey(source_island.population.index(migrant), source_island.completed_generations, source_island.ident)
+            migrant_history = source_island.statistics.solution_history.get(migrant_history_key)
+
+            source_island.population.remove(migrant) # Remove migrant from source island
+            if migrant_history is not None:
+                migrant.meta[SOLUTION_SOURCE_META_KEY] = SolutionSourceMeta(index=migrant_history.index,
+                                                                            ident=migrant_history.ident)
 
             # If the destination island has reached population_size, replace a random individual
             if len(destination_island.population) >= destination_island.population_size:
                 replace_index = random.randrange(destination_island.population_size)
                 destination_island.population[replace_index] = migrant
+                migrant_index = replace_index
             else:
                 # Otherwise, simply add the migrant to the destination island
                 destination_island.population.append(migrant)
+                migrant_index = len(destination_island.population) - 1
+
+            # Update history of the destination island with the new migrant
+            if migrant_history is not None:
+                source_island.statistics.shift_history_after_removal(migrant_history_key)
+                destination_island.statistics.add_history_item(replace(migrant_history, key=replace(migrant_history_key,
+                                                                                                    index=migrant_index,
+                                                                                                    generation=destination_island.completed_generations)))
 
     def run(self) -> List[SolutionCandidate[A, R, Fitness]]:
         """
@@ -95,6 +131,7 @@ class IslandModel(Generic[A, R, Fitness]):
         for generation in tqdm(range(generations), unit='generation'):
             for island in self._islands:
                 island.evaluate_population(generation)
+                island._completed_generations = generation + 1
 
             # Update statistics with whole population across islands
             self._statistics.update_fitness(chain.from_iterable(island.population for island in self._islands))
