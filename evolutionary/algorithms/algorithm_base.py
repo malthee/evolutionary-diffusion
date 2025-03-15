@@ -4,7 +4,8 @@ from typing import Generic, Callable, List, Optional
 from tqdm import tqdm
 
 from evolutionary.evolution_base import A, R, Fitness, SolutionCreator, Evaluator, SolutionCandidate
-from evolutionary.statistics import StatisticsTracker, Stages
+from evolutionary.history import SolutionHistoryKey
+from evolutionary.statistics import StatisticsTracker, Stages, SolutionHistoryItem
 
 
 class Algorithm(ABC, Generic[A, R, Fitness]):
@@ -24,7 +25,8 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
                  solution_creator: SolutionCreator[A, R],
                  evaluator: Evaluator[R, Fitness],
                  initial_arguments: List[A],
-                 post_evaluation_callback: Optional[GenerationCallback] = None):
+                 post_evaluation_callback: Optional[GenerationCallback] = None,
+                 ident: Optional[int] = None):
         assert num_generations > 0, "Number of generations must be greater than 0"
         assert population_size > 0, "Population size must be greater than 0"
         assert len(initial_arguments) > 0, "Initial arguments must not be empty"
@@ -35,6 +37,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         self._evaluator = evaluator
         self._initial_arguments = initial_arguments
         self._post_evaluation_callback = post_evaluation_callback
+        self._ident = ident # Additional identifier for tracking history, useful when there are multiple algorithms
         self._statistics = StatisticsTracker()  # Weaved into methods for tracking
         self._population: List[SolutionCandidate[A, R, Fitness]] = []
 
@@ -50,7 +53,9 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         self._statistics.stop_time_tracking('evaluation')
 
         if self._post_evaluation_callback:
+            self._statistics.start_time_tracking('post_evaluation')
             self._post_evaluation_callback(generation, self)
+            self._statistics.stop_time_tracking('post_evaluation')
 
         self._statistics.update_fitness(self._population)
 
@@ -65,6 +70,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
         self._statistics.start_time_tracking('creation')
         # Init form the args, wrap around if there are not enough
         while len(self._population) < self._population_size:
+            self._statistics.add_history_item(SolutionHistoryItem(SolutionHistoryKey(index=i, generation=0, ident=self.ident), mutated=False))
             self._population.append(self._solution_creator.create_solution(
                 self._initial_arguments[i % len(self._initial_arguments)])
             )
@@ -91,12 +97,16 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
     def population(self):
         return self._population
 
+    @property
+    def ident(self):
+        return self._ident
+
     @abstractmethod
     def perform_generation(self, generation: int):
         """
         Run a single generation of the algorithm.
         The population should be evaluated beforehand.
-        Must be implemented by subclasses.
+        Must be implemented by subclasses. Must increment self._completed_generations at the beginning.
         """
         pass
 
@@ -120,7 +130,6 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
 
         for generation in tqdm(range(self.num_generations), unit='generation'):
             self.evaluate_population(generation)
-            self._completed_generations = generation + 1
 
             # If this is the last generation, finish here
             if generation == self.num_generations - 1:
