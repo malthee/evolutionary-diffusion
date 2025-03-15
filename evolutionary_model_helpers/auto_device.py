@@ -98,6 +98,6 @@ def load_torch_model(model_path, url, device=auto_device()):
         urllib.request.urlretrieve(url, model_path)
 
     # Load the model
-    model = torch.load(model_path, map_location=torch.device(device))
+    model = torch.load(model_path, map_location=torch.device(device), weights_only=True)
     print("Model loaded successfully.")
     return model
