@@ -48,12 +48,13 @@ def plot_fitness_statistics(num_generations: int,
 
 def plot_time_statistics(evaluation_time: List[float],
                          creation_time: List[float],
+                         post_evaluation_time: Optional[List[float]] = None,
                          title: str = 'Time Statistics over Generations in Seconds'):
     """
     Plots the summarized time statistics in a Pie chart.
     """
-    labels = ['Evaluation', 'Creation']
-    sizes = [sum(evaluation_time), sum(creation_time)]
+    labels = ['Evaluation', 'Creation'] + (['Post Evaluation'] if post_evaluation_time else [])
+    sizes = [sum(evaluation_time), sum(creation_time)] + ([sum(post_evaluation_time)] if post_evaluation_time else [])
 
     def autopct_format(values):
         def autopct_with_values(pct):

@@ -63,6 +63,9 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
     """
     Saves images from a given generation of solution candidates to the RESULTS folder with a sub-folder for
     the generation.
+    Produces filenames in the format:
+      - If ident is provided: "id_{ident}_{index}_{...}.png"
+      - Otherwise: "{index}_{...}.png"
 
     Args:
     - population (List[SolutionCandidate[Any, ImageSolutionData]]): The population of solution candidates.
@@ -93,6 +96,34 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
             image_path = os.path.join(generation_dir, image_name)
             paths.append(image_path)
             image.save(image_path)
+    return paths
+
+
+def get_images_for_candidate(index: int, generation: int, ident: Optional[int] = None) -> List[str]:
+    """
+    Gets image paths from disk for a candidate identified by generation, index, and optional ident.
+    It scans the RESULTS_FOLDER/generation directory for image files whose names match the expected prefix.
+
+    Expected filename format:
+      - If ident is provided: "id_{ident}_{index}_{...}.png"
+      - Otherwise: "{index}_{...}.png"
+
+    Returns a list of str paths.
+    """
+    generation_dir = os.path.join(RESULTS_FOLDER, str(generation))
+    if not os.path.exists(generation_dir):
+        return []
+
+    if ident is not None:
+        prefix = f"id_{ident}_{index}_"
+    else:
+        prefix = f"{index}_"
+
+    paths = []
+    for filename in os.listdir(generation_dir):
+        if filename.startswith(prefix) and filename.endswith(".png"):
+            full_path = os.path.join(generation_dir, filename)
+            paths.append(full_path)
     return paths
 
 
