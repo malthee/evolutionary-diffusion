@@ -22,10 +22,9 @@ imaging_requirements = [
 extras_require = {
     'imaging': torch_diffusers_requirements + imaging_requirements,
     'model_helpers': torch_diffusers_requirements,
-    'prompt_embedding': torch_diffusers_requirements + imaging_requirements,
+    'prompt_embedding': torch_diffusers_requirements + imaging_requirements + ['tensorflow~=2.18.0'],
     'prompt_embedding_utils': [
         'datasets~=3.2.0',
-        'tensorflow~=2.18.0',
     ] + torch_diffusers_requirements,
 }
 
@@ -51,9 +50,10 @@ setup(
                      * model_helpers (evolutionary_model_helpers): Auto-loading different model types on devices. 
                      With additional utility functions. Variation for tensors.
                      * prompt_embedding (evolutionary_prompt_embedding): Using evolutionary_prompt_embeddings to 
-                     generate images and perform evolutionary variation using prompt embeddings.
+                     generate images and perform evolutionary variation using prompt embeddings. Visualizing the
+                     embeddings using Tensorboard.
                      * prompt_embedding_utils (evolutionary_prompt_embedding.utils): Additional utilities for evaluating
-                     the prompt embedding range or visualizing embeddings using TensorBoard. 
+                     the prompt embedding range.
                      ''',
     packages=find_packages(),
     install_requires=[

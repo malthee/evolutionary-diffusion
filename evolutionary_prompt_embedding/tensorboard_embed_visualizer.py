@@ -18,6 +18,7 @@ METADATA_FILE = "metadata.tsv"
 EMBEDDING_CHECKPOINT = "embedding.ckpt"
 SPRITE_IMAGE = "sprite.png"
 SPRITE_MAX_DIM = 8192  # TensorBoard supports sprites up to 8192x8192 pixels.
+DEFAULT_OUTPUT_FOLDER = "vis"
 
 from enum import Enum
 
@@ -32,13 +33,12 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
     """
     Visualizes embeddings in TensorBoard with custom identifiers.
     The user must provide a metadata header (as a str or list of str) which will appear as the first line in the metadata file.
-    Part of the utils suite.
-    Warning as for now TensorBoard is limited to 2GB of data in embeddings because of Protobuf limitations.
+    Warning as for now TensorBoard is limited to 2GB of data in the embeddings checkpoint because of Protobuf limitations.
     This already had an RFC but did not get implemented yet, and is gated by an is_oss flag https://github.com/tensorflow/community/blob/master/rfcs/20230720-unbound-saved-model.md.
     """
     def __init__(self,
                  metadata_header: LabelType,
-                 output_folder: str = "vis") -> None:
+                 output_folder: str = DEFAULT_OUTPUT_FOLDER) -> None:
         self._metadata_header: List[str] = (
             [metadata_header] if isinstance(metadata_header, str) else metadata_header
         )
@@ -46,23 +46,6 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
         self._embeddings: List[EmbedType] = []
         self._labels: List[LabelType] = []
         self._image_paths: List[str] = []
-
-    def add_embedding(self, embedding: EmbedType, label: LabelType, image_path: Optional[str]) -> None:
-        self._embeddings.append(embedding)
-        self._labels.append(label)
-        if image_path: self._image_paths.append(image_path)
-
-    def add_embeddings(self, items: Iterable[Tuple[EmbedType, LabelType, Optional[str]]]) -> None:
-        for item in items:
-            if len(item) == 2:
-                embedding, label = item
-                image_path = None
-            elif len(item) == 3:
-                embedding, label, image_path = item
-            else:
-                raise ValueError(f"Invalid number of items ({len(item)}) provided, expected 2 or 3.")
-
-            self.add_embedding(embedding, label, image_path)
 
     def _compute_variants(self, include_variants: Iterable[EmbeddingVariant], embeddings: List[EmbedType]) -> Dict[str, torch.Tensor]:
         normal_variants: List[torch.Tensor] = []
@@ -193,15 +176,37 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
                 emb_config.sprite.single_image_dim.extend(sprite_single_image_dim)
         return config
 
+    @property
+    def output_folder(self) -> str:
+        return self._output_folder
+
+    def add_embedding(self, embedding: EmbedType, label: LabelType, image_path: Optional[str]) -> None:
+        self._embeddings.append(embedding)
+        self._labels.append(label)
+        if image_path: self._image_paths.append(image_path)
+
+    def add_embeddings(self, items: Iterable[Tuple[EmbedType, LabelType, Optional[str]]]) -> None:
+        for item in items:
+            if len(item) == 2:
+                embedding, label = item
+                image_path = None
+            elif len(item) == 3:
+                embedding, label, image_path = item
+            else:
+                raise ValueError(f"Invalid number of items ({len(item)}) provided, expected 2 or 3.")
+
+            self.add_embedding(embedding, label, image_path)
+
     def generate_visualization(self, include_variants: Optional[Iterable[EmbeddingVariant]] = None,
                                 sprite_single_image_dim: Optional[Tuple[int, int]] = None,
                                 filter_predicate: Optional[Callable[[EmbedType, LabelType, str], bool]] = None) -> None:
         """
-        Generates the visualization for the embeddings in TensorBoard.
-        Allows filtering embedding variants and defining variance_ratio useful for space optimization as browser
-        visualization has shown to have problems with files that are multiple GB.
+        Generates the visualization for the embeddings in TensorBoard. Saving the embeddings, metadata, and sprite image in the output folder.
+        Warning: The embedding checkpoint shall not exceed 2GB or else TensorBoard is not able to load it! As a rule of thumb if all
+        variants are included around 3000 embeddings can be visualized.
+        Optionally variants of embeddings can be specifically included in the visualization. By default, all are included.
+        Optionally embeddings can be filtered using a predicate function that takes the embedding, label, and image path as arguments.
         Optionally takes a tuple (width, height) for the images in the sprite file. If not provided the images are not used.
-        Embeddings can be filtered using a predicate function that takes the embedding, label, and image path as arguments.
         """
         if not self._embeddings:
             raise ValueError("No embeddings have been added.")
