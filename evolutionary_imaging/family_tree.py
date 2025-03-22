@@ -8,6 +8,7 @@ from evolutionary_imaging.processing import get_images_for_candidate
 
 def visualize_family_tree(history: Dict[SolutionHistoryKey, SolutionHistoryItem],
                           root_key: SolutionHistoryKey,
+                          with_labels: bool = True,
                           depth: int = 3,
                           engine: str = "dot",
                           format: str = "pdf") -> Digraph:
@@ -18,6 +19,7 @@ def visualize_family_tree(history: Dict[SolutionHistoryKey, SolutionHistoryItem]
     Args:
         history: Dictionary mapping SolutionHistoryKey to SolutionHistoryItem.
         root_key: The starting candidate's key.
+        with_labels: Whether to include text labels for each candidate.
         depth: Maximum number of generations to traverse.
         engine: The Graphviz layout engine (e.g., "dot", "neato", "fdp").
         format: Output format (e.g., "pdf" to preserve images).
@@ -28,7 +30,6 @@ def visualize_family_tree(history: Dict[SolutionHistoryKey, SolutionHistoryItem]
     # Set bottom-to-top layout and reduce spacing.
     dot.attr(rankdir="BT")
     dot.attr(overlap="false", nodesep="0.1", ranksep="0.1")
-    # Use plain nodes; we won't rely on HTML labels.
     dot.attr('node', shape="none", margin="0", fontsize="10", fontname="Helvetica")
     visited = set()
 
@@ -60,9 +61,10 @@ def visualize_family_tree(history: Dict[SolutionHistoryKey, SolutionHistoryItem]
             else:
                 s.node(candidate_img_id, label="No Image", shape="box")
             # Use a plaintext label node; add a background if desired via the "style" attribute.
-            s.node(candidate_lbl_id, label=item.short_str(), shape="plaintext", style="filled", fillcolor="white")
-            # Connect them with an invisible edge with minlen=0 to force them to stick together.
-            s.edge(candidate_img_id, candidate_lbl_id, dir="none", style="invis", weight="100", minlen="0")
+            if with_labels:
+                s.node(candidate_lbl_id, label=item.short_str(), shape="plaintext", style="filled", fillcolor="white")
+                # Connect them with an invisible edge with minlen=0 to force them to stick together.
+                s.edge(candidate_img_id, candidate_lbl_id, dir="none", style="invis", weight="100", minlen="0")
 
         # Draw edges from parent's image node to this candidate's image node.
         if item.parent_1 is not None:
