@@ -127,7 +127,7 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
         # needs to be done in order to work with TensorBoard
         # Convert each PIL image to a numpy array after resizing.
         data = []
-        for img_path in self._image_paths:
+        for img_path in image_paths:
             img_resized = Image.open(img_path).resize(sprite_single_image_dim)
             arr = np.array(img_resized)
             data.append(arr)
