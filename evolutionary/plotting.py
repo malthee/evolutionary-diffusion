@@ -1,5 +1,6 @@
 from typing import List, Optional
 import matplotlib.pyplot as plt
+from matplotlib import pyplot
 
 from evolutionary.evolution_base import Fitness
 
@@ -13,7 +14,7 @@ def plot_fitness_statistics(num_generations: int,
                             labels: Optional[List[str]] = None,
                             # Only plot the fitness of the index objective.
                             multi_objective_plot_index: Optional[int] = None
-                            ):
+                            ) -> pyplot:
     """
     Plots the fitness statistics over generations.
     Plots single of multi objective fitness with optional custom labels as descriptors for each fitness.
@@ -44,6 +45,7 @@ def plot_fitness_statistics(num_generations: int,
     plt.title(title)
     plt.legend()
     plt.show()
+    return plt
 
 
 def plot_time_statistics(evaluation_time: List[float],
