@@ -37,6 +37,46 @@ def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 
 
     return mutated_tensor
 
+def spherical_rotation_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 0.05,
+                                     mutation_angle: float = 0.1) -> torch.Tensor:
+    """
+    Rotate each unit-normalized embedding by a small random angle.
+
+    :param tensor: (torch.Tensor): [D] or [B, D] tensor of L2-normalized vectors.
+    :param mutation_rate: (float): Fraction of embeddings (rows) to perturb.
+    :param mutation_angle: (float): Maximum angular deviation (radians).
+
+    :returns: torch.Tensor: Same shape as input, with selected vectors rotated on the unit sphere.
+    """
+    single = (tensor.dim() == 1)
+    if single:
+        tensor = tensor.unsqueeze(0)
+    B, D = tensor.shape
+    device = tensor.device
+
+    # Clone so we don’t overwrite
+    out = tensor.clone()
+    # Decide which rows to mutate
+    mask = torch.rand(B, device=device) < mutation_rate
+    if mask.any():
+        idxs = mask.nonzero(as_tuple=False).view(-1)
+        u = tensor[idxs]  # [M, D]
+        # Sample random directions, project into tangent space
+        v = torch.randn((idxs.size(0), D), device=device)
+        proj = (v * u).sum(dim=1, keepdim=True)
+        v_tangent = v - proj * u
+        norm = v_tangent.norm(dim=1, keepdim=True).clamp(min=1e-8)
+        v_tangent = v_tangent / norm  # unit tangent vectors
+
+        # Random angles in [−mutation_angle, +mutation_angle]
+        theta = (torch.rand((idxs.size(0), 1), device=device) * 2 - 1) * mutation_angle
+        cos_t = torch.cos(theta)
+        sin_t = torch.sin(theta)
+
+        # Rotate: u' = u·cos(θ) + v_tangent·sin(θ)
+        out[idxs] = u * cos_t + v_tangent * sin_t
+
+    return out.squeeze(0) if single else out
 
 def uniform_crossover_tensors(tensor1: torch.Tensor, tensor2: torch.Tensor,
                               swap_rate: float = 0.5) -> torch.Tensor:
@@ -57,7 +97,6 @@ def uniform_crossover_tensors(tensor1: torch.Tensor, tensor2: torch.Tensor,
     offspring = torch.where(crossover_mask, tensor1, tensor2)
 
     return offspring
-
 
 def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
                          interpolation_weight: float = 0.5, proportion: float = 1.0) -> torch.Tensor:
@@ -100,3 +139,25 @@ def arithmetic_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor,
     flat_offspring[indices] = flat_tensor1[indices] * interpolation_weight + flat_tensor2[indices] * (
                 1 - interpolation_weight)
     return offspring
+
+def slerp_crossover(tensor1: torch.Tensor, tensor2: torch.Tensor, ratio: float) -> torch.Tensor:
+    """
+    Perform spherical linear interpolation (SLERP) between two tensors along the great-circle arc per vector element.
+
+    :param tensor1: (torch.Tensor): The first tensor.
+    :param tensor2: (torch.Tensor): The second tensor.
+    :param ratio: (float): Interpolation parameter between 0 and 1.
+    :returns: torch.Tensor: The resulting tensor after SLERP.
+    """
+    def _slerp(u, v, t):
+        u_norm = torch.nn.functional.normalize(u, dim=-1)
+        v_norm = torch.nn.functional.normalize(v, dim=-1)
+        # Prevent issues with numerical stability through clamping -1, 1
+        dot = (u_norm * v_norm).sum(dim=-1, keepdim=True).clamp(-1.0, 1.0)
+        omega = torch.acos(dot)
+        so = torch.sin(omega).clamp_min(1e-6)
+        return (
+            torch.sin((1 - t) * omega) / so * u +
+            torch.sin(t * omega) / so * v
+        )
+    return _slerp(tensor1, tensor2, ratio)
