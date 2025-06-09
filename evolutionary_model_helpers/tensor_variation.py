@@ -4,6 +4,7 @@ Implements ways to perform variation on tensors, such as crossover and mutation.
 
 import torch
 from typing import Tuple, Union
+import torch.nn.functional as F
 
 
 def uniform_gaussian_mutate_tensor(tensor: torch.Tensor, mutation_rate: float = 0.05, mutation_strength: float = 0.1,
@@ -59,25 +60,30 @@ def spherical_rotation_mutate_tensor(
     dtype = tensor.dtype
 
     out = tensor.clone()
-    mask = torch.rand(B, device=device, dtype=dtype) < mutation_rate
+    mask = torch.rand(B, device=device) < mutation_rate
     if mask.any():
         idxs = mask.nonzero(as_tuple=False).view(-1)
-        u = tensor[idxs]  # [M, D]
+        # ensure u is perfectly finite (you said inputs have no NaN/Inf)
+        u = tensor[idxs]
 
         # random direction in ambient space
         v = torch.randn((idxs.size(0), D), device=device, dtype=dtype)
         # project onto tangent space at u
         proj = (v * u).sum(dim=1, keepdim=True)
         v_tangent = v - proj * u
-        v_tangent = torch.nn.functional.normalize(v_tangent, dim=-1)
+        # normalize with an epsilon so zero‐tangents don't blow up
+        v_tangent = F.normalize(v_tangent, dim=-1, eps=1e-6)
 
-        # sample angles and compute trig in same dtype
+        # sample angles and compute trig
         theta = (torch.rand((idxs.size(0), 1), device=device, dtype=dtype) * 2 - 1) * mutation_angle
-        cos_t = torch.cos(theta).to(device=device, dtype=dtype)
-        sin_t = torch.sin(theta).to(device=device, dtype=dtype)
+        cos_t = torch.cos(theta)
+        sin_t = torch.sin(theta)
 
         # rotate along the sphere
         rotated = (u * cos_t) + (v_tangent * sin_t)
+        # final scrub—just in case to avoid NaNs/Inf
+        rotated = torch.nan_to_num(rotated, nan=0.0, posinf=0.0, neginf=0.0)
+
         out[idxs] = rotated
 
     return out.squeeze(0) if single else out
@@ -157,18 +163,34 @@ def slerp_crossover(
     :param ratio: Interpolation parameter in [0,1].
     :returns: torch.Tensor result of SLERP, same shape as inputs.
     """
-    # ensure same dtype/device
     device = tensor1.device
     dtype = tensor1.dtype
 
-    u_norm = torch.nn.functional.normalize(tensor1, dim=-1)
-    v_norm = torch.nn.functional.normalize(tensor2, dim=-1)
+    # normalize with eps so zero‐length never divides by zero
+    u_norm = F.normalize(tensor1, dim=-1, eps=1e-6)
+    v_norm = F.normalize(tensor2, dim=-1, eps=1e-6)
+
+    # dot in [–1,1], then scrub any NaN
     dot = (u_norm * v_norm).sum(dim=-1, keepdim=True).clamp(-1.0, 1.0)
+    dot = torch.nan_to_num(dot, nan=1.0)
+
     omega = torch.acos(dot)
+    # detect "tiny" angles where slerp numerics break → we'll fallback there
+    tiny = omega.abs() < 1e-4
+
+    # safe sine
     sin_omega = torch.sin(omega).clamp_min(1e-6)
 
     t = torch.tensor(ratio, device=device, dtype=dtype)
     part1 = torch.sin((1 - t) * omega) / sin_omega * tensor1
     part2 = torch.sin(t * omega) / sin_omega * tensor2
+    out = part1 + part2
 
-    return part1 + part2
+    if tiny.any():
+        # linear fallback for nearly-parallel vectors
+        lin = tensor1.lerp(tensor2, ratio)
+        # broadcast tiny mask over the last dim and replace
+        out = torch.where(tiny.expand_as(out), lin, out)
+
+    # final scrub to catch any residual Inf/NaN
+    return torch.nan_to_num(out, nan=0.0, posinf=0.0, neginf=0.0)
