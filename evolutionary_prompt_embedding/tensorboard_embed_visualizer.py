@@ -222,11 +222,13 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
         filtered_labels: List[LabelType] = []
         filtered_image_paths: List[str] = []
         if filter_predicate is not None:
-            for emb, lab, img in zip(self._embeddings, self._labels, self._image_paths):
+            for i, (emb, lab) in enumerate(zip(self._embeddings, self._labels)):
+                img = self._image_paths[i] if i < len(self._image_paths) else None
                 if filter_predicate(emb, lab, img):
                     filtered_embeddings.append(emb)
                     filtered_labels.append(lab)
-                    filtered_image_paths.append(img)
+                    if img is not None:
+                        filtered_image_paths.append(img)
         else:
             filtered_embeddings = self._embeddings
             filtered_labels = self._labels
