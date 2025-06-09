@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
 torch_diffusers_requirements = [
-    'torch~=2.5.1',
-    'diffusers~=0.32.2',
-    'transformers~=4.48.0',
-    'accelerate~=1.2.1',
+    'torch~=2.7.1',
+    'diffusers~=0.33.1',
+    'transformers~=4.52.4',
+    'accelerate~=1.7.0',
     'Pillow',
 ]
 
@@ -14,10 +14,15 @@ imaging_requirements = [
         'graphviz~=0.20.3',
         # Used in the Aesthetics model for evaluation
         'clip @ git+https://github.com/openai/CLIP.git@a1d071733d7111c9c014f024669f959182114e33',
-        'torchvision~=0.20.1',
-        'torchmetrics~=1.3.1',
+        'torchvision~=0.22.1',
+        'torchmetrics~=1.5.1',
         'pytorch-lightning~=2.4.0',
         'imageio>=2.33.0',
+]
+
+sound_requirements = [
+    'audiobox_aesthetics~=0.0.4',
+    'soundfile~=0.13.1',
 ]
 
 extras_require = {
@@ -27,6 +32,7 @@ extras_require = {
     'prompt_embedding_utils': [
         'datasets~=3.2.0',
     ] + torch_diffusers_requirements,
+    'sound': sound_requirements,
 }
 
 all_deps = set(dep for deps in extras_require.values() for dep in deps)
