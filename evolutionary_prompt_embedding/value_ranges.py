@@ -51,7 +51,6 @@ class SDXLTurboEmbeddingRange(EmbeddingRange):
             max_values = torch.load(max_tensor_path, weights_only=True)
         super().__init__(min_values, max_values)
 
-
 class SDXLTurboPooledEmbeddingRange(EmbeddingRange):
     """
     Class to load and store the value range of SDXL Turbo pooled embedding tensors.
@@ -64,7 +63,6 @@ class SDXLTurboPooledEmbeddingRange(EmbeddingRange):
             max_values = torch.load(max_tensor_path, weights_only=True)
         super().__init__(min_values, max_values)
 
-
 class SDTurboEmbeddingRange(EmbeddingRange):
     """
     Class to load and store the value range of SD Turbo embedding tensors.
@@ -74,5 +72,16 @@ class SDTurboEmbeddingRange(EmbeddingRange):
         with resources.path('evolutionary_prompt_embedding.tensors', 'sd_turbo_min_tensor.pt') as min_tensor_path:
             min_values = torch.load(min_tensor_path, weights_only=True)
         with resources.path('evolutionary_prompt_embedding.tensors', 'sd_turbo_max_tensor.pt') as max_tensor_path:
+            max_values = torch.load(max_tensor_path, weights_only=True)
+        super().__init__(min_values, max_values)
+
+class AudioLDMFullEmbeddingRange(EmbeddingRange):
+    """
+    Class to load and store the value range of AudioLDM Full embedding tensors.
+    """
+    def __init__(self):
+        with resources.path('evolutionary_prompt_embedding.tensors', 'audioldmfull_min_tensor.pt') as min_tensor_path:
+            min_values = torch.load(min_tensor_path, weights_only=True)
+        with resources.path('evolutionary_prompt_embedding.tensors', 'audioldmfull_max_tensor.pt') as max_tensor_path:
             max_values = torch.load(max_tensor_path, weights_only=True)
         super().__init__(min_values, max_values)
