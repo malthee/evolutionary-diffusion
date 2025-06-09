@@ -2,7 +2,8 @@ from typing import Tuple, Optional
 from evolutionary.evolution_base import Mutator, Crossover
 from evolutionary_prompt_embedding.argument_types import PromptEmbedData, PooledPromptEmbedData
 from evolutionary_model_helpers.tensor_variation import (uniform_crossover_tensors, uniform_gaussian_mutate_tensor,
-                                                         arithmetic_crossover)
+                                                         arithmetic_crossover, slerp_crossover,
+                                                         spherical_rotation_mutate_tensor)
 
 
 class ArithmeticCrossover(Crossover[PromptEmbedData]):
@@ -125,4 +126,74 @@ class PooledUniformGaussianMutator(Mutator[PooledPromptEmbedData]):
                                                            self._pooled_args.mutation_rate,
                                                            self._pooled_args.mutation_strength,
                                                            self._pooled_args.clamp_range)
+        return PooledPromptEmbedData(new_embeds, new_pooled_embeds)
+
+
+class SlerpCrossover(Crossover[PromptEmbedData]):
+    def __init__(self, ratio: float = 0.5):
+        """
+        Perform spherical linear interpolation (SLERP) between two prompt embeddings.
+
+        :param ratio: (float): Interpolation parameter between 0 and 1.
+        """
+        self._ratio = ratio
+
+    def crossover(self, argument1: PromptEmbedData, argument2: PromptEmbedData) -> PromptEmbedData:
+        new_embeds = slerp_crossover(argument1.prompt_embeds, argument2.prompt_embeds, self._ratio)
+        return PromptEmbedData(new_embeds)
+
+
+class PooledSlerpCrossover(Crossover[PooledPromptEmbedData]):
+    def __init__(self, ratio: float, ratio_pooled: float):
+        """
+        Perform spherical linear interpolation (SLERP) between two pooled prompt embeddings.
+
+        :param ratio: (float): Interpolation parameter between 0 and 1 for prompt embeddings.
+        :param ratio_pooled: (float): Interpolation parameter between 0 and 1 for pooled prompt embeddings.
+        """
+        self._ratio = ratio
+        self._ratio_pooled = ratio_pooled
+
+    def crossover(self, argument1: PooledPromptEmbedData, argument2: PooledPromptEmbedData) -> PooledPromptEmbedData:
+        new_embeds = slerp_crossover(argument1.prompt_embeds, argument2.prompt_embeds, self._ratio)
+        new_pooled_embeds = slerp_crossover(argument1.pooled_prompt_embeds, argument2.pooled_prompt_embeds, self._ratio_pooled)
+        return PooledPromptEmbedData(new_embeds, new_pooled_embeds)
+
+
+class SphericalRotationMutator(Mutator[PromptEmbedData]):
+    def __init__(self, mutation_rate: float, mutation_angle: float):
+        """
+        Rotate each unit-normalized embedding by a small random angle.
+
+        :param mutation_rate: (float): Fraction of embeddings (rows) to perturb.
+        :param mutation_angle: (float): Maximum angular deviation (radians).
+        """
+        self._mutation_rate = mutation_rate
+        self._mutation_angle = mutation_angle
+
+    def mutate(self, argument: PromptEmbedData) -> PromptEmbedData:
+        new_embeds = spherical_rotation_mutate_tensor(argument.prompt_embeds, self._mutation_rate, self._mutation_angle)
+        return PromptEmbedData(new_embeds)
+
+
+class PooledSphericalRotationMutator(Mutator[PooledPromptEmbedData]):
+    def __init__(self, mutation_rate: float, mutation_angle: float, mutation_rate_pooled: float, mutation_angle_pooled: float):
+        """
+        Rotate each unit-normalized embedding by a small random angle for both prompt and pooled embeddings.
+
+        :param mutation_rate: (float): Fraction of prompt embeddings (rows) to perturb.
+        :param mutation_angle: (float): Maximum angular deviation (radians) for prompt embeddings.
+        :param mutation_rate_pooled: (float): Fraction of pooled embeddings (rows) to perturb.
+        :param mutation_angle_pooled: (float): Maximum angular deviation (radians) for pooled embeddings.
+        """
+        self._mutation_rate = mutation_rate
+        self._mutation_angle = mutation_angle
+        self._mutation_rate_pooled = mutation_rate_pooled
+        self._mutation_angle_pooled = mutation_angle_pooled
+
+    def mutate(self, argument: PooledPromptEmbedData) -> PooledPromptEmbedData:
+        new_embeds = spherical_rotation_mutate_tensor(argument.prompt_embeds, self._mutation_rate, self._mutation_angle)
+        new_pooled_embeds = spherical_rotation_mutate_tensor(argument.pooled_prompt_embeds, 
+                                                            self._mutation_rate_pooled, 
+                                                            self._mutation_angle_pooled)
         return PooledPromptEmbedData(new_embeds, new_pooled_embeds)
