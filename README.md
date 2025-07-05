@@ -17,6 +17,8 @@
 Image results will be saved in your Google Drive in the folder `evolutionary`. Each generation
 creates a new folder where the images will be saved in. You can change the folders in the notebook.
 
+Sometimes Google Collab causes dependency problems which break the notebook. If you have any issues executing this in a Collab environment, please do not hesitate to create a new issue.
+
 ## Example - Creating the most Aesthetic Image
 
 ### Optimizing for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA and SDXL-Turbo
