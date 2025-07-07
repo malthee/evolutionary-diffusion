@@ -9,7 +9,6 @@ torch_diffusers_requirements = [
 ]
 
 imaging_requirements = [
-        'imageio',
         'numpy~=1.26.4',
         'graphviz~=0.20.3',
         # Used in the Aesthetics model for evaluation
@@ -28,7 +27,7 @@ sound_requirements = [
 extras_require = {
     'imaging': torch_diffusers_requirements + imaging_requirements,
     'model_helpers': torch_diffusers_requirements,
-    'prompt_embedding': torch_diffusers_requirements + imaging_requirements + ['tensorflow~=2.18.0'],
+    'prompt_embedding': torch_diffusers_requirements + ['tensorflow~=2.18.0'], 
     'prompt_embedding_utils': [
         'datasets~=3.2.0',
     ] + torch_diffusers_requirements,
@@ -40,7 +39,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.7.0',
+    version='0.8.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
@@ -57,10 +56,11 @@ setup(
                      * model_helpers (evolutionary_model_helpers): Auto-loading different model types on devices. 
                      With additional utility functions. Variation for tensors.
                      * prompt_embedding (evolutionary_prompt_embedding): Using evolutionary_prompt_embeddings to 
-                     generate images and perform evolutionary variation using prompt embeddings. Visualizing the
-                     embeddings using Tensorboard.
+                     generate images and sound and perform evolutionary variation using prompt embeddings. Visualizing the
+                     embeddings using Tensorboard. To be used with `imaging` or `sound` subpackages.
                      * prompt_embedding_utils (evolutionary_prompt_embedding.utils): Additional utilities for evaluating
                      the prompt embedding range.
+                     * sound (evolutionary_sound): Adding evaluators for sound solutions.
                      ''',
     packages=find_packages(),
     install_requires=[

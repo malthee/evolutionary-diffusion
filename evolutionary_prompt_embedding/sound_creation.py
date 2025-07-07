@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Any, Literal
+from typing import Any
 
-from diffusers import AudioLDMPipeline, DiffusionPipeline
+from diffusers import AudioLDMPipeline
 
 from evolutionary_model_helpers.auto_device import auto_device
 from evolutionary_prompt_embedding.argument_types import PooledPromptEmbedData, PromptEmbedData
 from evolutionary.evolution_base import SolutionCandidate
-from evolutionary_imaging.image_base import ImageCreator, ImageSolutionData, A
+from evolutionary_imaging.image_base import A
 import torch
 import soundfile as sf
 import os

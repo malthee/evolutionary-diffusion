@@ -1,4 +1,9 @@
 # Changelog for the evolutionary package
+## 0.8.0 (07.07.2025)
+* Official support for sound generation using AudioLDM and evaluation with `evolutionary_sound` (`sound` subpackage) nad Audiobox Aesthetics.
+* BREAKING: `prompt_embedding` now supports sound generation but will not include `imaging` anymore since sound does not use it. You will now have to install both `evolutionary[prompt_embedding]` and `evolutionary[sound or imaging]`.
+* Updating notebooks to reflect the package changes.
+
 ## 0.7.0 (16.03.2025)
 * Added `TensorboardEmbedVisualizer` to allow for easy visualization of embeddings with different algorithms like PCA, UMAP, etc. TensorBoard comes with a lot of functionality for that.
 * `load_torch_model` weights only is now `True`
