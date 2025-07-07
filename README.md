@@ -1,10 +1,14 @@
 # Evolutionary-Diffusion
 *Combining Evolutionary Computing with Diffusion Models*
 
+### Images
 * 🎨 Aesthetics Maximization/Minimization using [LAION Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor)
 * 📊 Multi-Objective Optimization with CLIP-IQA metrics
 * 🛡️ Evading AI-Image Detection by optimizing against a [fine-tuned SDXL AI-Image-Detector](https://huggingface.co/Organika/sdxl-detector)
 * 🧭 Navigating the CLIP-Score Landscape for Prompt-Matching
+
+### Audio
+* 🔊 Optimize [Audiobox Aesthetics from Meta](https://github.com/facebookresearch/audiobox-aesthetics)
 
 ## Try it out in Google Colab
 
@@ -57,6 +61,13 @@ Performing an Island GA by creating random embeddings and mixing them with artis
 
 [More images](https://github.com/malthee/evolutionary-diffusion-results/tree/main/interesting_images)
 
+## Example - Improving Audiobox Aesthetics Score
+Starting from noisy random samples, evolving to better sounds. Using the sum of all fitness criteria Audiobox Aesthetics offers.
+
+https://github.com/user-attachments/assets/25be32eb-188b-483a-a787-9cea4d7f5eeb 
+
+https://github.com/user-attachments/assets/17f4bef7-1f5a-47a4-8f29-e4f42519a4fe
+
 ## Detailed Results and Notebooks
 More detailed results can be found in a separate repository dedicated to the results of the experiments:
 https://github.com/malthee/evolutionary-diffusion-results
@@ -66,11 +77,16 @@ https://github.com/malthee/evolutionary-diffusion-results
 * CLIPScoreEvaluator: Using the [torchmetrics implementation for CLIP-Score](https://lightning.ai/docs/torchmetrics/stable/multimodal/clip_score.html)
 * (Single/Multi)CLIPIQAEvaluator: Using the [torchmetrics implementation for CLIP Image Quality Assessment](https://lightning.ai/docs/torchmetrics/stable/multimodal/clip_iqa.html).
 * AIDetectionImageEvaluator: Using the [original Version from HuggingFace](https://huggingface.co/umm-maybe/AI-image-detector), or the [fine-tuned one for SDXL generated images](https://huggingface.co/Organika/sdxl-detector)
+* AudioboxAestheticsEvaluator: Using [Audiobox Aesthetics from Meta](https://github.com/facebookresearch/audiobox-aesthetics)
 
 ## Image Creators
 Current supported creators working in the prompt embedding space:
 * SDXLPromptEmbeddingImageCreator: Supports the SDXL pipeline, creates both prompt- and pooled-prompt-embeddings.
 * SDPromptEmbeddingImageCreator: Only has prompt-embeddings, is faster but produces less quality results than SDXL.
+
+## Audio Creators
+Supporting only AudioLDM because it works simply on the CLAP embedding space (suitable for this kind of operation). Other embeddings have shown to not work well with evolutionary operations (like the T5 encoder for example) 
+* AudioLDMSoundCreator: Works with any AudioLDMPipeline, default is audioldm-l-full
 
 ## Package Structure and Base Classes
 ![Package Diagram](https://github.com/malthee/evolutionary-diffusion/assets/18032233/4943b577-faa9-45ce-8f8a-b781e65734be)
