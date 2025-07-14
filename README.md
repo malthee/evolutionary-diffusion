@@ -23,6 +23,16 @@ creates a new folder where the images will be saved in. You can change the folde
 
 Sometimes Google Collab causes dependency problems which break the notebook. If you have any issues executing this in a Collab environment, please do not hesitate to create a new issue.
 
+## Running locally
+Optionally but recommended to use a venv.
+Clone the repo or download the .zip, then install the dependencies via:
+
+`
+pip install -e ".[all]" 
+`
+
+Now you are ready to go with the notebooks or custom code. CUDA and MPS are supported.
+
 ## Example - Creating the most Aesthetic Image
 
 ### Optimizing for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA and SDXL-Turbo
