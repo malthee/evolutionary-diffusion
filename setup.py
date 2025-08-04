@@ -17,6 +17,7 @@ imaging_requirements = [
         'torchmetrics~=1.5.1',
         'pytorch-lightning~=2.4.0',
         'imageio>=2.33.0',
+        'aesthetic-predictor-v2-5',
 ]
 
 sound_requirements = [
@@ -39,7 +40,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.8.0',
+    version='0.8.1',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
@@ -48,7 +49,7 @@ setup(
     long_description='''This package includes generic classes for evolutionary computation in a generational environment.
                      Crossover and Mutation happens on the argument (A) level, whilst the fitness is evaluated on the result (R) level.
                      SolutionCandidates are created by a SolutionCreator, their representation is split into arguments (A) and result (R).
-                     
+
                      Additional installation variants (pip install evolutionary[...]):
                      * all: Install all dependencies, full functionality across all subpackages.
                      * imaging (evolutionary_imaging): Contains base dependencies for evolutionary image generation, 

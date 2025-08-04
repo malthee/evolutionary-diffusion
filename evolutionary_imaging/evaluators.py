@@ -1,3 +1,5 @@
+from urllib.error import URLError
+
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
@@ -11,7 +13,8 @@ from transformers import pipeline
 from evolutionary.evolution_base import SingleObjectiveEvaluator, SingleObjectiveFitness, MultiObjectiveFitness, \
     Evaluator
 from evolutionary_imaging.image_base import ImageSolutionData
-from evolutionary_model_helpers.auto_device import auto_clip_device, load_torch_model
+from evolutionary_model_helpers.auto_device import auto_clip_device, auto_device, load_torch_model
+from aesthetic_predictor_v2_5 import convert_v2_5_from_siglip
 
 _model_cache: Dict[str, Any] = {}
 """
@@ -34,7 +37,15 @@ def get_or_create_model(model_id: str, creator: Callable[[], Any]) -> Any:
     """
     global _model_cache
     if model_id not in _model_cache:
-        _model_cache[model_id] = creator()
+        try:
+            _model_cache[model_id] = creator()
+        except URLError:
+            print('Warning: Failed to load model from URL. Will try to create it without SSL verification.')
+            # Create an SSL context that doesn't verify certificates
+            import ssl
+            ssl._create_default_https_context = ssl._create_unverified_context
+            _model_cache[model_id] = creator()
+
     return _model_cache[model_id]
 
 
@@ -48,6 +59,10 @@ def _normalized(a, axis=-1, order=2):
 
 
 class AestheticsImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
+    """
+    Aesthetics Predictor V2 from the improved-aesthetic-predictor repository.
+    """
+
     DEFAULT_MODEL_PATH = "./models/sac+logos+ava1-l14-linearMSE.pth"
     MODEL_URL = ("https://github.com/christophschuhmann/improved-aesthetic-predictor/raw/main/sac+logos+ava1-l14"
                  "-linearMSE.pth")
@@ -232,3 +247,49 @@ class SingleCLIPIQAEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
     def evaluate(self, result: ImageSolutionData) -> float:
         scores = self._multi_evaluator.evaluate(result)
         return scores[0]  # Return the score for the single metric
+
+
+class AestheticPredictorV25ImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
+    """
+    Evaluates the aesthetic quality of images using the aesthetic_predictor_v2_5 model.
+    This model is based on SigLIP.
+    """
+
+    def _setup_model(self):
+        # Load model and preprocessor
+        model, preprocessor = convert_v2_5_from_siglip(
+            low_cpu_mem_usage=True,
+            trust_remote_code=True, # todo test if still works when disabled
+        )
+
+        # Move model to appropriate device and convert to bfloat16 if supported
+        if self.device == 'cuda' and torch.cuda.is_available():
+            model = model.to(torch.bfloat16).cuda()
+        else:
+            model = model.to(self.device)
+
+        return model, preprocessor
+
+    def __init__(self, device: torch.device = auto_device()):
+        self.device = device
+        self.model, self.preprocessor = get_or_create_model("AestheticPredictorV25ImageEvaluator",
+                                                           lambda: self._setup_model())
+
+    @torch.no_grad()
+    def evaluate(self, result: ImageSolutionData) -> SingleObjectiveFitness:
+        scores = []
+        for img in result.images:
+            # Preprocess image
+            pixel_values = self.preprocessor(images=img, return_tensors="pt").pixel_values
+
+            # Convert to appropriate format and device
+            if self.device == 'cuda' and torch.cuda.is_available():
+                pixel_values = pixel_values.to(torch.bfloat16).cuda()
+            else:
+                pixel_values = pixel_values.to(self.device)
+
+            # Predict aesthetic score
+            score = self.model(pixel_values).logits.squeeze().float().cpu().numpy()
+            scores.append(float(score))
+
+        return np.mean(scores) if scores else 0.0

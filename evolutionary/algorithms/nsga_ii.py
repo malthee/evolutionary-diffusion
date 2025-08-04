@@ -82,6 +82,7 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         self._post_non_dominated_sort_callback = post_non_dominated_sort_callback
         self._population: List[NSGASolutionCandidate] = []  # Override the type to NSGA-II's solution candidate
         self._fronts = [[]]
+        self._cached_best_solution = None
 
     def _fast_non_dominated_sort(self):
         self._fronts = [[]]
@@ -181,7 +182,7 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         self._population = new_population
 
     def perform_generation(self, generation: int):
-        self._completed_generations = generation + 1
+        self._cached_best_solution = None
         self._fast_non_dominated_sort()
         if self._post_non_dominated_sort_callback:
             self._post_non_dominated_sort_callback(generation, self)
@@ -190,6 +191,10 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
         self._crossover_and_mutation(generation)
 
     def best_solution(self) -> NSGASolutionCandidate:
+        # Return cached solution if available, so this is only calculated once
+        if self._cached_best_solution is not None:
+            return self._cached_best_solution
+
         self._fast_non_dominated_sort()
         # Sort for last generation one more time
         if self._post_non_dominated_sort_callback:
@@ -217,10 +222,12 @@ class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
 
             # Find the solution with the highest sum of normalized fitness values
             best_index = normalized_fitness_sums.index(max(normalized_fitness_sums))
-            return self._fronts[0][best_index]
+            self._cached_best_solution = self._fronts[0][best_index]
         else:
             # If not normalizing, simply take the solution with the highest sum of fitness values
-            return max(self._fronts[0], key=lambda x: sum(x.fitness))
+            self._cached_best_solution = max(self._fronts[0], key=lambda x: sum(x.fitness))
+
+        return self._cached_best_solution
 
     @property
     def fronts(self):

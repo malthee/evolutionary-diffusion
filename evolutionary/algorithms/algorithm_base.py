@@ -130,6 +130,7 @@ class Algorithm(ABC, Generic[A, R, Fitness]):
 
         for generation in tqdm(range(self.num_generations), unit='generation'):
             self.evaluate_population(generation)
+            self._completed_generations = generation + 1
 
             # If this is the last generation, finish here
             if generation == self.num_generations - 1:

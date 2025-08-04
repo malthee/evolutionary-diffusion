@@ -1,4 +1,9 @@
 # Changelog for the evolutionary package
+## 0.8.1 (03.08.2025)
+* Fix completed_generations compatability with visualizations by increasing it in algorithm_base.py instead of in the individual algorithms.
+* Avoid recalculating best solution in NSGA_II by caching it
+* Added the AestheticPredictorV25ImageEvaluator
+
 ## 0.8.0 (07.07.2025)
 * Official support for sound generation using AudioLDM and evaluation with `evolutionary_sound` (`sound` subpackage) nad Audiobox Aesthetics.
 * BREAKING: `prompt_embedding` now supports sound generation but will not include `imaging` anymore since sound does not use it. You will now have to install both `evolutionary[prompt_embedding]` and `evolutionary[sound or imaging]`.

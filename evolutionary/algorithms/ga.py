@@ -42,7 +42,6 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
         self.elitism_count = elitism_count
 
     def perform_generation(self, generation: int):
-        self._completed_generations = generation + 1
         # Elitism: Carry over the top individuals if enabled
         elites = sorted(self._population, key=lambda candidate: candidate.fitness, reverse=True)[:self.elitism_count] \
             if self.elitism_count else []
