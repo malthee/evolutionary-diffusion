@@ -84,6 +84,7 @@ https://github.com/malthee/evolutionary-diffusion-results
 
 ## Evaluators
 * AestheticsImageEvaluator: Uses the [LAION Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor). Blog: https://laion.ai/blog/laion-aesthetics/
+* AestheticsPredictorV25ImageEvaluator: Uses the [Aesthetic Predictor V2.5 from discus0434](https://github.com/discus0434/aesthetic-predictor-v2-5)
 * CLIPScoreEvaluator: Using the [torchmetrics implementation for CLIP-Score](https://lightning.ai/docs/torchmetrics/stable/multimodal/clip_score.html)
 * (Single/Multi)CLIPIQAEvaluator: Using the [torchmetrics implementation for CLIP Image Quality Assessment](https://lightning.ai/docs/torchmetrics/stable/multimodal/clip_iqa.html).
 * AIDetectionImageEvaluator: Using the [original Version from HuggingFace](https://huggingface.co/umm-maybe/AI-image-detector), or the [fine-tuned one for SDXL generated images](https://huggingface.co/Organika/sdxl-detector)
