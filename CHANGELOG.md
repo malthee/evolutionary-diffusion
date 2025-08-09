@@ -1,4 +1,9 @@
 # Changelog for the evolutionary package
+## 0.8.2 (09.08.2025)
+* Added image-to-prompt functionality in `evolutionary_imaging.img2prompt` that generates Stable Diffusion prompts from images using Qwen2.5-VL-7B-Instruct
+  * Added a pre-testing notebook `img2prompt_inference.ipynb` to test this functionality
+* Added a Single-Objective `SumEvaluator` to sum the fitness values of multiple evaluators
+
 ## 0.8.1 (03.08.2025)
 * Fix completed_generations compatability with visualizations by increasing it in algorithm_base.py instead of in the individual algorithms.
 * Avoid recalculating best solution in NSGA_II by caching it
