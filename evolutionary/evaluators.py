@@ -91,3 +91,32 @@ class GoalDiminishingEvaluator(SingleObjectiveEvaluator):
         else:
             # Apply diminishing returns to the portion of the fitness above the goal.
             return self._goal_value + log(1 + (original_fitness - self._goal_value) * self._diminish_scale)
+
+
+class SumEvaluator(SingleObjectiveEvaluator[R_covariant]):
+    """
+    Combines multiple single-objective evaluators by summing their fitness values.
+    This evaluator is useful when you want to optimize for multiple objectives but still use
+    single-objective evolutionary algorithms.
+    """
+
+    def __init__(self, evaluators: Sequence[SingleObjectiveEvaluator[R_covariant]]):
+        """
+        Initializes the sum evaluator with a list of single-objective evaluators.
+
+        Args:
+            evaluators: A sequence of single-objective evaluators whose fitness values will be summed.
+        """
+        self._evaluators = evaluators
+
+    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+        """
+        Evaluates the result using all evaluators and returns the sum of their fitness values.
+
+        Args:
+            result: The result to evaluate.
+
+        Returns:
+            The sum of all evaluator fitness values.
+        """
+        return sum(evaluator.evaluate(result) for evaluator in self._evaluators)
