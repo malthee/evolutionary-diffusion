@@ -1,19 +1,19 @@
 from math import log
 from typing import Sequence
 
-from evolutionary.evolution_base import SingleObjectiveEvaluator, R_covariant, SingleObjectiveFitness, Evaluator, \
+from evolutionary.evolution_base import SingleObjectiveEvaluator, R_contravariant, SingleObjectiveFitness, Evaluator, \
     MultiObjectiveFitness, Fitness
 
 
-class MultiObjectiveEvaluator(Evaluator[R_covariant, MultiObjectiveFitness]):
-    def __init__(self, evaluators: Sequence[Evaluator[R_covariant, Fitness]]):
+class MultiObjectiveEvaluator(Evaluator[R_contravariant, MultiObjectiveFitness]):
+    def __init__(self, evaluators: Sequence[Evaluator[R_contravariant, Fitness]]):
         """
         Initializes the multi-objective evaluator with a list of single- and multi-objective evaluators.
         The result of multiple evaluators will extend the result of this evaluator.
         """
         self._evaluators = evaluators
 
-    def evaluate(self, result: R_covariant) -> MultiObjectiveFitness:
+    def evaluate(self, result: R_contravariant) -> MultiObjectiveFitness:
         fitness = []
         for evaluator in self._evaluators:
             evaluation_result = evaluator.evaluate(result)
@@ -29,10 +29,10 @@ class InverseEvaluator(SingleObjectiveEvaluator):
     Inverts the fitness value of a single-objective evaluator.
     Used to minimize instead of maximize, as by default evaluators are meant to maximize.
     """
-    def __init__(self, evaluator: SingleObjectiveEvaluator[R_covariant]):
+    def __init__(self, evaluator: SingleObjectiveEvaluator[R_contravariant]):
         self._evaluator = evaluator
 
-    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+    def evaluate(self, result: R_contravariant) -> SingleObjectiveFitness:
         return -self._evaluator.evaluate(result)
 
 
@@ -42,7 +42,7 @@ class CappedEvaluator(SingleObjectiveEvaluator):
     Useful for limiting the fitness value to a certain threshold.
     """
 
-    def __init__(self, evaluator: SingleObjectiveEvaluator[R_covariant], cap_value: float):
+    def __init__(self, evaluator: SingleObjectiveEvaluator[R_contravariant], cap_value: float):
         """
         Initializes the capped evaluator with a base evaluator and a cap value.
 
@@ -54,7 +54,7 @@ class CappedEvaluator(SingleObjectiveEvaluator):
         self._evaluator = evaluator
         self._cap_value = cap_value
 
-    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+    def evaluate(self, result: R_contravariant) -> SingleObjectiveFitness:
         original_fitness = self._evaluator.evaluate(result)
         return min(original_fitness, self._cap_value)
 
@@ -65,7 +65,7 @@ class GoalDiminishingEvaluator(SingleObjectiveEvaluator):
     For fitness values exceeding the goal, a logarithmic diminishing returns effect is applied.
     """
 
-    def __init__(self, evaluator: SingleObjectiveEvaluator[R_covariant], goal_value: SingleObjectiveFitness,
+    def __init__(self, evaluator: SingleObjectiveEvaluator[R_contravariant], goal_value: SingleObjectiveFitness,
                  diminish_scale: float = 1.0):
         """
         Initializes the evaluator with a goal value and a scale for diminishing returns.
@@ -82,7 +82,7 @@ class GoalDiminishingEvaluator(SingleObjectiveEvaluator):
         self._goal_value = goal_value
         self._diminish_scale = diminish_scale
 
-    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+    def evaluate(self, result: R_contravariant) -> SingleObjectiveFitness:
         original_fitness = self._evaluator.evaluate(result)
 
         # Apply the diminishing returns logic only for values exceeding the goal
@@ -93,14 +93,14 @@ class GoalDiminishingEvaluator(SingleObjectiveEvaluator):
             return self._goal_value + log(1 + (original_fitness - self._goal_value) * self._diminish_scale)
 
 
-class SumEvaluator(SingleObjectiveEvaluator[R_covariant]):
+class SumEvaluator(SingleObjectiveEvaluator[R_contravariant]):
     """
     Combines multiple single-objective evaluators by summing their fitness values.
     This evaluator is useful when you want to optimize for multiple objectives but still use
     single-objective evolutionary algorithms.
     """
 
-    def __init__(self, evaluators: Sequence[SingleObjectiveEvaluator[R_covariant]]):
+    def __init__(self, evaluators: Sequence[SingleObjectiveEvaluator[R_contravariant]]):
         """
         Initializes the sum evaluator with a list of single-objective evaluators.
 
@@ -109,7 +109,7 @@ class SumEvaluator(SingleObjectiveEvaluator[R_covariant]):
         """
         self._evaluators = evaluators
 
-    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+    def evaluate(self, result: R_contravariant) -> SingleObjectiveFitness:
         """
         Evaluates the result using all evaluators and returns the sum of their fitness values.
 

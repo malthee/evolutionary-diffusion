@@ -11,7 +11,7 @@ from abc import abstractmethod, ABC
 
 A = TypeVar('A')
 R = TypeVar('R')
-R_covariant = TypeVar('R_covariant', covariant=True)
+R_contravariant = TypeVar('R_contravariant', contravariant=True)
 SingleObjectiveFitness = float
 MultiObjectiveFitness = Sequence[float]
 Fitness = TypeVar('Fitness', SingleObjectiveFitness, MultiObjectiveFitness)
@@ -20,18 +20,18 @@ Fitness may be a single value or a sequence of values in case of multi-objective
 """
 
 
-class Evaluator(Generic[R_covariant, Fitness], ABC):
+class Evaluator(Generic[R_contravariant, Fitness], ABC):
     @abstractmethod
-    def evaluate(self, result: R_covariant) -> Fitness:
+    def evaluate(self, result: R_contravariant) -> Fitness:
         """
         Evaluates the fitness of a result, higher is better (maximization).
         """
         pass
 
 
-class SingleObjectiveEvaluator(Evaluator[R_covariant, SingleObjectiveFitness], ABC):
+class SingleObjectiveEvaluator(Evaluator[R_contravariant, SingleObjectiveFitness], ABC):
     @abstractmethod
-    def evaluate(self, result: R_covariant) -> SingleObjectiveFitness:
+    def evaluate(self, result: R_contravariant) -> SingleObjectiveFitness:
         pass
 
 
