@@ -16,7 +16,9 @@
 |--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Genetic Algorithm        | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/ga_notebook.ipynb)               |
 | Island Genetic Algorithm | [![Island Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/island_ga_notebook.ipynb) |
-| NSGA                     | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/nsga_notebook.ipynb)             |
+| NSGA-II                  | [![NSGA-II](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/nsga_notebook.ipynb)             |
+
+**New:** NSGA-III implementation now available! See [example](examples/nsga_iii_example.py) and [documentation](evolutionary/algorithms/NSGA_III_README.md) for many-objective optimization (4+ objectives).
 
 Image results will be saved in your Google Drive in the folder `evolutionary`. Each generation
 creates a new folder where the images will be saved in. You can change the folders in the notebook.
@@ -81,6 +83,12 @@ https://github.com/user-attachments/assets/17f4bef7-1f5a-47a4-8f29-e4f42519a4fe
 ## Detailed Results and Notebooks
 More detailed results can be found in a separate repository dedicated to the results of the experiments:
 https://github.com/malthee/evolutionary-diffusion-results
+
+## Algorithms
+* **Genetic Algorithm (GA)**: Single-objective optimization using tournament/rank/roulette selection
+* **NSGA-II**: Multi-objective optimization (2-3 objectives) using non-dominated sorting and crowding distance
+* **NSGA-III**: Many-objective optimization (4+ objectives) using reference points for better diversity. See [documentation](evolutionary/algorithms/NSGA_III_README.md)
+* **Island Model**: Parallel evolution with migration between islands, supports GA and NSGA-II
 
 ## Evaluators
 * AestheticsImageEvaluator: Uses the [LAION Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor). Blog: https://laion.ai/blog/laion-aesthetics/
