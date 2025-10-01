@@ -65,8 +65,9 @@ setup(
                      ''',
     packages=find_packages(),
     install_requires=[
-        "tqdm>=4.66.6",  # For visualizing progress of algorithms
+        'tqdm>=4.66.6',  # For visualizing progress of algorithms
         'matplotlib>=3.7',
+        'pymoo>=0.6.1.5',  # For NSGA-III implementation
     ],
     package_data={
         'evolutionary_prompt_embedding': ['tensors/*'],
