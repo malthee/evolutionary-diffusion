@@ -132,26 +132,28 @@ class NSGA_III(Algorithm[A, R, MultiObjectiveFitness], Generic[A, R]):
         self._survival = ReferenceDirectionSurvival(self._ref_dirs)
 
     def _compute_and_cache_fronts(self, candidates: List[NSGAIIISolutionCandidate], generation: int) -> None:
+        # Use pymoo for non-dominated sorting; stamp ranks on candidates
         F = -np.array([np.asarray(c.fitness, dtype=float) for c in candidates])  # negate: maximize -> minimize
         fronts = NonDominatedSorting().do(F, n_stop_if_ranked=len(candidates))
         self._fronts = [list(map(int, fr)) for fr in fronts]
-        # stamp ranks on the subclass (no .meta usage)
+
         ranks = np.empty(len(candidates), dtype=int)
         for r, fr in enumerate(self._fronts):
             ranks[np.asarray(fr, dtype=int)] = r
         for i, c in enumerate(candidates):
             c.rank = int(ranks[i])
         if self._post_nd_callback:
+            self._statistics.start_time_tracking('post_evaluation')
             self._post_nd_callback(generation, self)
+            self._statistics.start_time_tracking('post_evaluation')
 
     @staticmethod
     def _to_population(cands: List[NSGAIIISolutionCandidate]) -> Population:
+        # Create a pymoo Population
         if any(c.fitness is None for c in cands):
             raise ValueError("All candidates must be evaluated before NSGA-III survival.")
         # pymoo minimizes -> negate once here
         F = -np.asarray([np.asarray(c.fitness, dtype=float) for c in cands], dtype=float)  # shape (N, M)
-
-        # Correct: build a size-N Population in one call (avoids size mismatch)
         pop = Population.new("F", F)
         return pop
 
@@ -226,11 +228,9 @@ class NSGA_III(Algorithm[A, R, MultiObjectiveFitness], Generic[A, R]):
         )
         self._population = [combined[i] for i in keep]
 
-        # 4) Cache fronts/ranks for the next population & notify
-        self._compute_and_cache_fronts(self._population, generation)
-
-        # 5) Update fitness statistics for the new population
-        self._statistics.update_fitness(self._population)
+        # 5) Update fronts one more time and also call post ND callback on last gen
+        if generation == self.num_generations - 2:
+            self._compute_and_cache_fronts(self._population, generation + 1)
 
         # 6) Invalidate cached best (recomputed lazily on demand once)
         self._cached_best = None
