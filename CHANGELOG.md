@@ -1,4 +1,7 @@
 # Changelog for the evolutionary package
+## 0.9.0 (01.10.2025)
+* Added NSGA-III algorithm for many-objective optimization with different selectors
+
 ## 0.8.2 (09.08.2025)
 * Added image-to-prompt functionality in `evolutionary_imaging.img2prompt` that generates Stable Diffusion prompts from images using Qwen2.5-VL-7B-Instruct
   * Added a pre-testing notebook `img2prompt_inference.ipynb` to test this functionality
