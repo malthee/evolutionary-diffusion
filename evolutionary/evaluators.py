@@ -1,5 +1,5 @@
 from math import log
-from typing import Sequence
+from typing import Sequence, Union
 
 from evolutionary.evolution_base import SingleObjectiveEvaluator, R_contravariant, SingleObjectiveFitness, Evaluator, \
     MultiObjectiveFitness, Fitness
@@ -95,28 +95,23 @@ class GoalDiminishingEvaluator(SingleObjectiveEvaluator):
 
 class SumEvaluator(SingleObjectiveEvaluator[R_contravariant]):
     """
-    Combines multiple single-objective evaluators by summing their fitness values.
-    This evaluator is useful when you want to optimize for multiple objectives but still use
-    single-objective evolutionary algorithms.
-    """
-
-    def __init__(self, evaluators: Sequence[SingleObjectiveEvaluator[R_contravariant]]):
+    Produces a single fitness value by summing either:
+    1. A sequence of single-objective evaluator results, or
+    2. All objectives from a single multi-objective evaluator.
         """
-        Initializes the sum evaluator with a list of single-objective evaluators.
 
-        Args:
-            evaluators: A sequence of single-objective evaluators whose fitness values will be summed.
-        """
-        self._evaluators = evaluators
+    def __init__(
+        self,
+        evaluators_or_multi: Union[Sequence[SingleObjectiveEvaluator[R_contravariant]] | Evaluator[R_contravariant, MultiObjectiveFitness]],
+    ):
+        if isinstance(evaluators_or_multi, Sequence):
+            self._evaluators: Sequence[SingleObjectiveEvaluator[R_contravariant]] | None = evaluators_or_multi
+            self._multi_evaluator: Evaluator[R_contravariant, MultiObjectiveFitness] | None = None
+        else:
+            self._evaluators = None
+            self._multi_evaluator = evaluators_or_multi
 
     def evaluate(self, result: R_contravariant) -> SingleObjectiveFitness:
-        """
-        Evaluates the result using all evaluators and returns the sum of their fitness values.
-
-        Args:
-            result: The result to evaluate.
-
-        Returns:
-            The sum of all evaluator fitness values.
-        """
-        return sum(evaluator.evaluate(result) for evaluator in self._evaluators)
+        if self._multi_evaluator is not None:
+            return sum(self._multi_evaluator.evaluate(result))
+        return sum(e.evaluate(result) for e in self._evaluators)
