@@ -145,7 +145,7 @@ class NSGA_III(Algorithm[A, R, MultiObjectiveFitness], Generic[A, R]):
         if self._post_nd_callback:
             self._statistics.start_time_tracking('post_evaluation')
             self._post_nd_callback(generation, self)
-            self._statistics.start_time_tracking('post_evaluation')
+            self._statistics.stop_time_tracking('post_evaluation')
 
     @staticmethod
     def _to_population(cands: List[NSGAIIISolutionCandidate]) -> Population:
