@@ -39,7 +39,8 @@ class TensorboardEmbedVisualizer(Generic[EmbedType, LabelType]):
                  metadata_header: LabelType,
                  output_folder: str = DEFAULT_OUTPUT_FOLDER) -> None:
         self._metadata_header: List[str] = (
-            [metadata_header] if isinstance(metadata_header, str) else metadata_header
+            [metadata_header] if isinstance(metadata_header, str)
+            else [",".join(map(str, h)) if isinstance(h, tuple) else str(h) for h in metadata_header]
         )
         self._output_folder = output_folder
         self._embeddings: List[EmbedType] = []
