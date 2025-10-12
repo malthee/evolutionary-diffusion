@@ -112,6 +112,93 @@ class StatisticsTracker(Generic[Fitness]):
             new_item = replace(item, key=SolutionHistoryKey(index=item.index - 1, generation=item.generation, ident=item.ident))
             self._solution_history[new_item.key] = new_item
 
+    def avg_fitness_stats(self):
+        """
+        Calculate detailed statistics on the average fitness progress from first to last generation.
+
+        Works with:
+          - list of lists/arrays: compare entry-wise (first list vs last list)
+          - list of numbers: single-objective case -> one entry (index 0)
+
+        Returns:
+          per_entry: list[dict] with keys: index, first, last, abs_diff, pct_diff
+          aggregates: dict with keys:
+            sum_of_abs_diffs, abs_diff_of_totals, pct_diff_of_totals,
+            mean_pct_diff_across_entries, sum_first, sum_last
+        """
+        af = getattr(self, "_avg_fitness", None)
+        if not isinstance(af, (list, tuple)) or len(af) == 0:
+            raise ValueError("avg_fitness must be a non-empty list (of numbers) or list of lists.")
+
+        first_raw = af[0]
+        last_raw = af[-1]
+
+        # Normalize shapes:
+        # - if inner item is list/tuple/np.ndarray -> treat as multi-entry
+        # - else -> single-objective: wrap scalars as 1-length lists
+        def _to_list(x):
+            if isinstance(x, (list, tuple)):
+                return list(x)
+            try:
+                import numpy as np  # optional
+                if isinstance(x, np.ndarray):
+                    return x.astype(float).tolist()
+            except Exception:
+                pass
+            # scalar -> single-entry
+            return [float(x)]
+
+        first = [float(v) for v in _to_list(first_raw)]
+        last = [float(v) for v in _to_list(last_raw)]
+
+        # Align lengths safely (in case first/last differ in length)
+        n = min(len(first), len(last))
+        first = first[:n]
+        last = last[:n]
+
+        per_entry = []
+        for i, (a, b) in enumerate(zip(first, last)):
+            abs_diff = abs(b - a)
+            if a != 0.0:
+                pct_diff = (b - a) / a * 100.0
+            else:
+                denom = (abs(a) + abs(b))
+                # symmetric % difference, bounded [-200, 200]
+                pct_diff = 0.0 if denom == 0 else 2.0 * (b - a) / denom * 100.0
+
+            per_entry.append({
+                "index": i,
+                "first": a,
+                "last": b,
+                "abs_diff": abs_diff,
+                "pct_diff": pct_diff,  # signed percent change
+            })
+
+        sum_first = sum(first)
+        sum_last = sum(last)
+
+        # Aggregates (“together”)
+        sum_of_abs_diffs = sum(row["abs_diff"] for row in per_entry)  # L1 across entries
+        abs_diff_of_totals = abs(sum_last - sum_first)  # |Δ totals|
+        if sum_first != 0.0:
+            pct_diff_of_totals = (sum_last - sum_first) / sum_first * 100.0
+        else:
+            denom = abs(sum_first) + abs(sum_last)
+            pct_diff_of_totals = 0.0 if denom == 0 else 2.0 * (sum_last - sum_first) / denom * 100.0
+
+        mean_pct_diff = (sum(row["pct_diff"] for row in per_entry) / n) if n else 0.0
+
+        aggregates = {
+            "sum_of_abs_diffs": sum_of_abs_diffs,
+            "abs_diff_of_totals": abs_diff_of_totals,
+            "pct_diff_of_totals": pct_diff_of_totals,
+            "mean_pct_diff_across_entries": mean_pct_diff,
+            "sum_first": sum_first,
+            "sum_last": sum_last,
+        }
+
+        return per_entry, aggregates
+
     @property
     def best_fitness(self) -> FitnessList:
         """
