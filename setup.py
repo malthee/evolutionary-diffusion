@@ -14,7 +14,7 @@ imaging_requirements = [
         # Used in the Aesthetics model for evaluation
         'clip @ git+https://github.com/openai/CLIP.git@dcba3cb2e2827b402d2701e7e1c7d9fed8a20ef1',
         'torchvision~=0.22.1',
-        'torchmetrics~=1.5.1',
+        'torchmetrics[multimodal]~=1.5.1',
         'pytorch-lightning~=2.4.0',
         'imageio>=2.33.0',
         'aesthetic-predictor-v2-5',
