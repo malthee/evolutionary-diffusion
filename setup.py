@@ -12,7 +12,7 @@ imaging_requirements = [
         'numpy~=1.26.4',
         'graphviz~=0.20.3',
         # Used in the Aesthetics model for evaluation
-        'clip @ git+https://github.com/openai/CLIP.git@dcba3cb2e2827b402d2701e7e1c7d9fed8a20ef1',
+        'clip @ git+https://github.com/openai/CLIP.git@ded190a052fdf4585bd685cee5bc96e0310d2c93',
         'torchvision~=0.22.1',
         'torchmetrics[multimodal]~=1.5.1',
         'pytorch-lightning~=2.4.0',
@@ -40,7 +40,7 @@ extras_require['all'] = list(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.9.0',
+    version='0.9.1',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
