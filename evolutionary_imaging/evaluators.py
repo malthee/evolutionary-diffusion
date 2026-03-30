@@ -188,7 +188,7 @@ class MultiCLIPIQAEvaluator(Evaluator[ImageSolutionData, MultiObjectiveFitness])
                                   'openai/clip-vit-large-patch14-336', 'openai/clip-vit-large-patch14']
 
     SupportedMetricLiteral = Literal[
-        "quality", "brightness", "noisiness", "colorfulness",
+        "quality", "brightness", "noisiness", "colorfullness", "colorfulness",
         "sharpness", "contrast", "complexity", "natural",
         "happy", "scary", "new", "warm", "real",
         "beautiful", "lonely", "relaxing"
@@ -199,15 +199,30 @@ class MultiCLIPIQAEvaluator(Evaluator[ImageSolutionData, MultiObjectiveFitness])
     Metrics are either predefined or a tuple of two strings (positive, negative) for custom prompts.
     """
 
+    _METRIC_ALIASES = {
+        # TorchMetrics CLIP-IQA uses "colorfullness" (double-l).
+        # Keep both spellings for backwards compatibility.
+        "colorfulness": "colorfullness",
+    }
+
+    def _normalize_metric(self, metric: SupportedMetrics) -> SupportedMetrics:
+        if isinstance(metric, tuple):
+            return metric
+        return self._METRIC_ALIASES.get(metric, metric)
+
+    def _normalize_metrics(self, metrics: Tuple[SupportedMetrics, ...]) -> Tuple[SupportedMetrics, ...]:
+        return tuple(self._normalize_metric(metric) for metric in metrics)
+
     def _setup_model(self, model: SupportedCLIPModels, metrics: Tuple[SupportedMetrics, ...]):
         # noinspection PyTypeChecker
         return CLIPImageQualityAssessment(model_name_or_path=model, prompts=metrics)  # type is correct
 
     def __init__(self, metrics: Tuple[SupportedMetrics, ...],
                  clip_model: SupportedCLIPModels = "openai/clip-vit-base-patch16"):
-        self._metrics = metrics
-        self._model = get_or_create_model(f"MultiCLIPIQAEvaluator_{clip_model}_{metrics}",
-                                          lambda: self._setup_model(clip_model, metrics))
+        normalized_metrics = self._normalize_metrics(metrics)
+        self._metrics = normalized_metrics
+        self._model = get_or_create_model(f"MultiCLIPIQAEvaluator_{clip_model}_{normalized_metrics}",
+                                          lambda: self._setup_model(clip_model, normalized_metrics))
 
     @torch.no_grad()
     def evaluate(self, result: ImageSolutionData) -> MultiObjectiveFitness:

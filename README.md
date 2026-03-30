@@ -24,13 +24,17 @@ creates a new folder where the images will be saved in. You can change the folde
 Sometimes Google Collab causes dependency problems which break the notebook. If you have any issues executing this in a Collab environment, please do not hesitate to create a new issue.
 
 ## Running locally
-Optionally but recommended to use a venv.
-Clone the repo or download the .zip, then install the dependencies via:
+Using a virtual environment is recommended.
+Clone the repo (or download the zip), then install dependencies:
 
-`
-pip install -e ".[all]" 
-`
+```bash
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -e ".[all]"
+```
 
+The dependency set is validated on Python 3.12 and 3.13.
 Now you are ready to go with the notebooks or custom code. CUDA and MPS are supported.
 
 ## Example - Creating the most Aesthetic Image

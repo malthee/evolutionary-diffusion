@@ -1,4 +1,11 @@
 # Changelog for the evolutionary package
+## 0.10.0 (30.03.2026)
+* BREAKING: Upgrade dependency baselines across extras to current compatible releases.
+* Add explicit `tensorboard` dependency for prompt embedding visualization support.
+* Validate full `.[all]` installation and imports on Python 3.12 and Python 3.13.
+* Update notebooks for compatibility with the upgraded package structure and Colab install command.
+* Accept both `colorfulness` and `colorfullness` in CLIP-IQA evaluator, normalizing to TorchMetrics prompt keys.
+
 ## 0.9.0 (01.10.2025)
 * Added NSGA-III algorithm for many-objective optimization with different selectors
 

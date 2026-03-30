@@ -1,23 +1,23 @@
 from setuptools import setup, find_packages
 
 torch_diffusers_requirements = [
-    'torch~=2.7.1',
-    'diffusers~=0.33.1',
-    'transformers~=4.52.4',
-    'accelerate~=1.7.0',
-    'Pillow',
+    'torch~=2.11.0',
+    'diffusers~=0.37.1',
+    'transformers~=5.4.0',
+    'accelerate~=1.13.0',
+    'Pillow~=12.1',
 ]
 
 imaging_requirements = [
-        'numpy~=1.26.4',
-        'graphviz~=0.20.3',
-        # Used in the Aesthetics model for evaluation
-        'clip @ git+https://github.com/openai/CLIP.git@ded190a052fdf4585bd685cee5bc96e0310d2c93',
-        'torchvision~=0.22.1',
-        'torchmetrics[multimodal]~=1.5.1',
-        'pytorch-lightning~=2.4.0',
-        'imageio>=2.33.0',
-        'aesthetic-predictor-v2-5',
+    'numpy>=2.1,<3.0',
+    'graphviz~=0.21',
+    # Used in the Aesthetics model for evaluation
+    'clip @ git+https://github.com/openai/CLIP.git@ded190a052fdf4585bd685cee5bc96e0310d2c93',
+    'torchvision~=0.26.0',
+    'torchmetrics[multimodal]~=1.9.0',
+    'pytorch-lightning~=2.6.1',
+    'imageio>=2.37.3',
+    'aesthetic-predictor-v2-5~=2024.12.18.1',
 ]
 
 sound_requirements = [
@@ -28,19 +28,19 @@ sound_requirements = [
 extras_require = {
     'imaging': torch_diffusers_requirements + imaging_requirements,
     'model_helpers': torch_diffusers_requirements,
-    'prompt_embedding': torch_diffusers_requirements + ['tensorflow~=2.18.0'], 
+    'prompt_embedding': torch_diffusers_requirements + ['tensorflow~=2.21.0', 'tensorboard>=2.20,<2.21'],
     'prompt_embedding_utils': [
-        'datasets~=3.2.0',
+        'datasets~=4.8.4',
     ] + torch_diffusers_requirements,
     'sound': sound_requirements,
 }
 
 all_deps = set(dep for deps in extras_require.values() for dep in deps)
-extras_require['all'] = list(all_deps)
+extras_require['all'] = sorted(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.9.1',
+    version='0.10.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
@@ -65,9 +65,17 @@ setup(
                      ''',
     packages=find_packages(),
     install_requires=[
-        'tqdm>=4.66.6',  # For visualizing progress of algorithms
-        'matplotlib>=3.7',
-        'pymoo>=0.6.1.5',  # For NSGA-III implementation
+        'tqdm>=4.67.3',  # For visualizing progress of algorithms
+        'matplotlib>=3.10.8',
+        'pymoo>=0.6.1.6',  # For NSGA-III implementation
+    ],
+    python_requires='>=3.10',
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
     ],
     package_data={
         'evolutionary_prompt_embedding': ['tensors/*'],
