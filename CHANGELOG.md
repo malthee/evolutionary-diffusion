@@ -1,4 +1,13 @@
 # Changelog for the evolutionary package
+## 0.10.1 (05.05.2026)
+* Add SSP and DIRE AI detection evaluators and variants:
+  * SSP (`SSPAIDetectionImageEvaluator`)
+  * DIRE official (`adm-ddim-official`)
+  * DIRE SDXL experimental (`sdxl-turbo-experimental`)
+* Add `certifi` in model-related extras to fix certificate issues during model/checkpoint downloads.
+* Add safe download coverage with checksum-focused tests.
+* Add `notebooks/aide_evaluation.ipynb` for folder-based AI detection evaluation and comparison.
+
 ## 0.10.0 (30.03.2026)
 * BREAKING: Upgrade dependency baselines across extras to current compatible releases.
 * Add explicit `tensorboard` dependency for prompt embedding visualization support.

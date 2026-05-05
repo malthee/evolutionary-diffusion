@@ -6,6 +6,7 @@ torch_diffusers_requirements = [
     'transformers~=5.4.0',
     'accelerate~=1.13.0',
     'Pillow~=12.1',
+    'certifi>=2024.0.0',
 ]
 
 imaging_requirements = [
@@ -40,7 +41,7 @@ extras_require['all'] = sorted(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.10.0',
+    version='0.10.1',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.

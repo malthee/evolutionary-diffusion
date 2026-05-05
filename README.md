@@ -4,7 +4,7 @@
 ### Images
 * 🎨 Aesthetics Maximization/Minimization using [LAION Aesthetics Predictor V2](https://github.com/christophschuhmann/improved-aesthetic-predictor)
 * 📊 Multi-Objective Optimization with CLIP-IQA metrics
-* 🛡️ Evading AI-Image Detection by optimizing against a [fine-tuned SDXL AI-Image-Detector](https://huggingface.co/Organika/sdxl-detector)
+* 🛡️ Evading AI-image detection by optimizing against a [fine-tuned SDXL detector](https://huggingface.co/Organika/sdxl-detector), [SSP](https://arxiv.org/abs/2402.01123), or [DIRE](https://arxiv.org/abs/2303.09295)
 * 🧭 Navigating the CLIP-Score Landscape for Prompt-Matching
 
 ### Audio
@@ -92,6 +92,8 @@ https://github.com/malthee/evolutionary-diffusion-results
 * CLIPScoreEvaluator: Using the [torchmetrics implementation for CLIP-Score](https://lightning.ai/docs/torchmetrics/stable/multimodal/clip_score.html)
 * (Single/Multi)CLIPIQAEvaluator: Using the [torchmetrics implementation for CLIP Image Quality Assessment](https://lightning.ai/docs/torchmetrics/stable/multimodal/clip_iqa.html).
 * AIDetectionImageEvaluator: Using the [original Version from HuggingFace](https://huggingface.co/umm-maybe/AI-image-detector), or the [fine-tuned one for SDXL generated images](https://huggingface.co/Organika/sdxl-detector)
+* SSPAIDetectionImageEvaluator: Implements SSP from [the paper](https://arxiv.org/abs/2402.01123) with references from the [official repo](https://github.com/bcmi/SSP-AI-Generated-Image-Detection).
+* DIREAIDetectionImageEvaluator: Implements DIRE from [the paper](https://arxiv.org/abs/2303.09295) with an official ADM/DDIM backend and an explicit SDXL-Turbo experimental comparison mode. Classifier auto-download uses the official RecDrive API share flow (with fallback to share links) and enforces pinned SHA-256 verification for the official checkpoint alias.
 * AudioboxAestheticsEvaluator: Using [Audiobox Aesthetics from Meta](https://github.com/facebookresearch/audiobox-aesthetics)
 
 ## Image Creators
@@ -114,8 +116,31 @@ These notebooks also allow for simple inference so that any model can be tried o
 
 * diffusion_model_comparison: tries out different diffusion models with varying arguments (inference steps, batch size) to find out the optimal model for image generation in an evolutionary context (generation speed & quality)
 * clip_evaluators: uses torch metrics with CLIPScore and CLIP IQA. CLIPScore could define the fitness for "prompt fulfillment" or "image alignment" while CLIP IQA has many possible metrics like "quality, brightness, happiness..."
-* ai_detection_evaluator: uses a pre-trained model for AI image detection. This could be a fitness criteria to minimize "AI-likeness" in images.
+* ai_detection_evaluator: evaluates AI-detection fitness for evasion using the SDXL detector, SSP, and DIRE. 
 * aesthetics_evaluator: uses a pre-trained model from the maintainers of the LAION image dataset, which scores an image 0-10 depending on how "aesthetic" it is. Could be used as a maximization criteria for the fitness of images.
 * clamp_range: testing the usual prompt-embedding min and max values for different models, so that a CLAMP range can be set in the mutator for example. [Using the parti prompts.](https://github.com/rromb/parti-prompts)
 * crossover_mutation_experiments: testing different crossover and mutation strategies to see how they work in the prompt embedding space
 * embedding_relations: experimenting with TensorBoard and integrating it into our embedding model
+
+### Secured auto-download of models and TLS certificates
+Sadly many of these models are hosted somewhere without a proper versioning and release system.  
+Thus we added some hardcoded hashes of the models we use in the code, so that if the auto-download is used, it will be verified against the expected hash. You can enable/disable this verification in the Evaluator usage code.
+
+Furthermore, the Model/checkpoint auto-download uses verified TLS. If you hit `CERTIFICATE_VERIFY_FAILED` on macOS Python.org builds, run:
+
+```bash
+/Applications/Python\ 3.13/Install\ Certificates.command
+```
+
+Alternative: set `SSL_CERT_FILE` to a valid CA bundle path (for example from `certifi`).
+An insecure fallback exists only via explicit opt-in for temporary troubleshooting:
+
+```bash
+export EVOLUTIONARY_DIFFUSION_ALLOW_INSECURE_SSL=1
+```
+
+## Tests (newly added, to be extended)
+
+```bash
+pytest tests -q
+```

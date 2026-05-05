@@ -6,6 +6,10 @@
 # Cannot push models as they are too large
 *.pth
 *.safetensors
+notebooks/models/
+models/
+pre-testing/models/
+
 
 # Don't push test image results
 pre-testing/**/*.png
