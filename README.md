@@ -93,7 +93,7 @@ https://github.com/malthee/evolutionary-diffusion-results
 * (Single/Multi)CLIPIQAEvaluator: Using the [torchmetrics implementation for CLIP Image Quality Assessment](https://lightning.ai/docs/torchmetrics/stable/multimodal/clip_iqa.html).
 * AIDetectionImageEvaluator: Using the [original Version from HuggingFace](https://huggingface.co/umm-maybe/AI-image-detector), or the [fine-tuned one for SDXL generated images](https://huggingface.co/Organika/sdxl-detector)
 * SSPAIDetectionImageEvaluator: Implements SSP from [the paper](https://arxiv.org/abs/2402.01123) with references from the [official repo](https://github.com/bcmi/SSP-AI-Generated-Image-Detection).
-* DIREAIDetectionImageEvaluator: Implements DIRE from [the paper](https://arxiv.org/abs/2303.09295) with an official ADM/DDIM backend and an explicit SDXL-Turbo experimental comparison mode. Classifier auto-download uses the official RecDrive API share flow (with fallback to share links) and enforces pinned SHA-256 verification for the official checkpoint alias.
+* DIREAIDetectionImageEvaluator: Implements DIRE from [the paper](https://arxiv.org/abs/2303.09295) with an official ADM/DDIM backend and an explicit SDXL-Turbo experimental comparison mode.
 * AudioboxAestheticsEvaluator: Using [Audiobox Aesthetics from Meta](https://github.com/facebookresearch/audiobox-aesthetics)
 
 ## Image Creators

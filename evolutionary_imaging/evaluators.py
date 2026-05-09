@@ -1,5 +1,6 @@
 import os
 import json
+import io
 import shutil
 import sys
 import tarfile
@@ -512,11 +513,13 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
 
     SupportedBackends = Literal["adm-ddim-official", "sdxl-turbo-experimental"]
     SupportedReconstructionModels = Literal["lsun_bedroom", "imagenet_uncond"]
-    SupportedClassifierCheckpoints = Literal["lsun_adm"]
+    SupportedClassifierCheckpoints = Literal["lsun_adm", "imagenet_adm"]
+    OfficialCodecMode = Literal["match-source-format", "none"]
 
     DEFAULT_BACKEND: SupportedBackends = "adm-ddim-official"
     DEFAULT_RECONSTRUCTION_MODEL: SupportedReconstructionModels = "lsun_bedroom"
     DEFAULT_CLASSIFIER_CHECKPOINT: SupportedClassifierCheckpoints = "lsun_adm"
+    DEFAULT_OFFICIAL_CODEC_MODE: OfficialCodecMode = "match-source-format"
     DEFAULT_DDIM_STEPS = 20
     DEFAULT_MODELS_DIR = "./models/dire"
     DEFAULT_RECONSTRUCTION_DIR = "./models/dire/reconstruction"
@@ -537,9 +540,11 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
     }
     CLASSIFIER_CHECKPOINT_FILES: Dict[SupportedClassifierCheckpoints, str] = {
         "lsun_adm": "lsun_adm.pth",
+        "imagenet_adm": "imagenet_adm.pth",
     }
     CLASSIFIER_CHECKPOINT_SHA256: Dict[SupportedClassifierCheckpoints, str] = {
         "lsun_adm": "e61a33a6066f23771f75aa717da8e6d7c7ecea6daa3110108368990f55e3e523",
+        "imagenet_adm": "09ffb75d8e597702be8462bd5249978c1a5a427f1b481efd3cdb2deb83036dcb",
     }
     RECDRIVE_API_BASE_URL = "https://recapi.ustc.edu.cn/api/v2"
     RECDRIVE_SHARE_NUMBER = "ec980150-4615-11ee-be0a-eb822f25e070"
@@ -578,6 +583,7 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
         classifier_checkpoint_path: str | None = None,
         reconstruction_model_path: str | None = None,
         download_if_missing: bool = True,
+        official_codec_mode: OfficialCodecMode = DEFAULT_OFFICIAL_CODEC_MODE,
         sdxl_model_id: str = "stabilityai/sdxl-turbo",
         sdxl_num_inference_steps: int = 4,
         sdxl_strength: float = 0.35,
@@ -591,15 +597,25 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
             ddim_steps: Number of DDIM steps for official inversion/reconstruction (paper default is 20).
             reconstruction_model: ADM reconstruction checkpoint choice.
             classifier_checkpoint: Pretrained DIRE classifier checkpoint alias.
+                Default is "lsun_adm" for strict paper-faithful LSUN setup;
+                use "imagenet_adm" for broader natural-image coverage.
             classifier_checkpoint_path: Optional local override for classifier checkpoint.
             reconstruction_model_path: Optional local override for reconstruction model checkpoint.
             download_if_missing: If True, download missing reconstruction/classifier assets when possible.
+            official_codec_mode:
+                How DIRE tensors are converted before classifier inference in official mode.
+                "match-source-format" emulates released dataset preprocessing behavior (.jpg -> JPEG encode/decode).
+                "none" disables codec emulation for codec-agnostic custom evaluations.
+                Default is "match-source-format" because the released lsun_adm classifier behavior is tied to this
+                preprocessing path; use "none" explicitly for custom codec-controlled studies.
             sdxl_model_id: SDXL-Turbo model id for experimental backend.
             sdxl_num_inference_steps: Number of img2img denoising steps for experimental backend.
             sdxl_strength: Img2img strength for experimental backend.
         """
         if backend not in ("adm-ddim-official", "sdxl-turbo-experimental"):
             raise ValueError(f"Unsupported backend: {backend}")
+        if official_codec_mode not in ("match-source-format", "none"):
+            raise ValueError(f"Unsupported official_codec_mode: {official_codec_mode}")
         if ddim_steps <= 0:
             raise ValueError("ddim_steps must be > 0.")
         if sdxl_num_inference_steps <= 0:
@@ -614,8 +630,10 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
         self.sdxl_model_id = sdxl_model_id
         self.sdxl_num_inference_steps = sdxl_num_inference_steps
         self.sdxl_strength = sdxl_strength
+        self.official_codec_mode = official_codec_mode
         self._download_if_missing = bool(download_if_missing)
         self._official_cpu_fallback_applied = False
+        self._codec_domain_warning_emitted = False
 
         self._classifier_preprocess = transforms.Compose(
             [
@@ -1051,6 +1069,29 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
         return script_util
 
     @staticmethod
+    def _center_crop_arr_like_guided_diffusion(image: Image.Image, image_size: int = 256) -> np.ndarray:
+        """
+        Match guided-diffusion center-crop preprocessing used by official DIRE scripts.
+        """
+        pil_image = image
+        while min(*pil_image.size) >= 2 * image_size:
+            pil_image = pil_image.resize(
+                tuple(x // 2 for x in pil_image.size),
+                resample=Image.Resampling.BOX,
+            )
+
+        scale = image_size / min(*pil_image.size)
+        pil_image = pil_image.resize(
+            tuple(round(x * scale) for x in pil_image.size),
+            resample=Image.Resampling.BICUBIC,
+        )
+
+        arr = np.array(pil_image)
+        crop_y = (arr.shape[0] - image_size) // 2
+        crop_x = (arr.shape[1] - image_size) // 2
+        return arr[crop_y : crop_y + image_size, crop_x : crop_x + image_size]
+
+    @staticmethod
     def _center_crop_square(image):
         width, height = image.size
         if width == height:
@@ -1062,10 +1103,9 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
 
     def _prepare_official_input(self, image: Any) -> torch.Tensor:
         image = _as_rgb_pil_image(image)
-        image = self._center_crop_square(image)
-        image = image.resize((256, 256), resample=Image.Resampling.BICUBIC)
-        tensor = self._to_tensor(image)
-        return tensor * 2.0 - 1.0
+        arr = self._center_crop_arr_like_guided_diffusion(image=image, image_size=256)
+        tensor = torch.from_numpy(arr.transpose(2, 0, 1)).float() / 127.5 - 1.0
+        return tensor
 
     def _compute_dire_official(self, image: Any) -> torch.Tensor:
         """
@@ -1186,18 +1226,97 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
         """
         Classify a DIRE image and return human-likeliness percent in [0, 100].
         """
-        human_score, _, _ = self._score_dire_tensor_with_details(dire_tensor)
+        human_score, _, _ = self._score_dire_tensor_with_details(dire_tensor, source_format=None)
         return human_score
 
-    def _score_dire_tensor_with_details(self, dire_tensor: torch.Tensor) -> tuple[float, float, float]:
+    @staticmethod
+    def _infer_source_format(image: Any) -> str | None:
+        """
+        Infer source format from PIL metadata or filename extension.
+        """
+        if not isinstance(image, Image.Image):
+            return None
+        fmt = (image.format or "").strip().lower()
+        if fmt:
+            return fmt
+        # PIL drops `format` after convert("RGB"), but JPEG keeps JFIF markers in `info`.
+        info = getattr(image, "info", {}) or {}
+        if any(key.lower().startswith("jfif") for key in info.keys()):
+            return "jpeg"
+        filename = str(getattr(image, "filename", "") or "")
+        if filename:
+            ext = os.path.splitext(filename)[1].lower().lstrip(".")
+            if ext:
+                return ext
+        return None
+
+    @staticmethod
+    def _encode_decode_jpeg(image: Image.Image, quality: int = 95) -> Image.Image:
+        """
+        Reproduce JPEG codec artifacts used when DIRE images are saved as .jpg.
+        """
+        buffer = io.BytesIO()
+        image.save(buffer, format="JPEG", quality=quality)
+        buffer.seek(0)
+        with Image.open(buffer) as encoded:
+            return encoded.convert("RGB")
+
+    def _apply_official_codec_mode(self, dire_image: Image.Image, source_format: str | None) -> Image.Image:
+        """
+        Apply official dataset-like codec behavior before classifier preprocessing.
+        """
+        if self.backend != "adm-ddim-official":
+            return dire_image
+        if self.official_codec_mode == "none":
+            return dire_image
+        if source_format in ("jpg", "jpeg", "jfif"):
+            return self._encode_decode_jpeg(dire_image, quality=95)
+        return dire_image
+
+    def _warn_if_codec_domain_mismatch(self, source_format: str | None):
+        """
+        Emit one-time guidance when released lsun_adm defaults are applied to PNG/unknown sources.
+        """
+        if self._codec_domain_warning_emitted:
+            return
+        if self.backend != "adm-ddim-official":
+            return
+        if self.official_codec_mode != "match-source-format":
+            return
+        checkpoint_name = os.path.basename(self._classifier_checkpoint_path).lower()
+        if checkpoint_name != "lsun_adm.pth":
+            return
+        if source_format in ("png", None):
+            warnings.warn(
+                "DIRE official lsun_adm checkpoint was released on LSUN data where real samples are mostly JPEG "
+                "and synthetic samples are PNG. PNG-only or unknown-format inputs may be biased toward synthetic "
+                "scores; prefer domain-matched checkpoints/datasets when available.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            self._codec_domain_warning_emitted = True
+
+    def _score_dire_tensor_with_details(
+        self,
+        dire_tensor: torch.Tensor,
+        source_format: str | None,
+    ) -> tuple[float, float, float]:
         """
         Classify a DIRE image and return (human_score, synthetic_probability, logit).
         """
+        self._warn_if_codec_domain_mismatch(source_format=source_format)
         dire_image = to_pil_image(dire_tensor.clamp(0.0, 1.0))
+        dire_image = self._apply_official_codec_mode(dire_image=dire_image, source_format=source_format)
         input_tensor = self._classifier_preprocess(dire_image).unsqueeze(0).to(self.device)
         logit = self._classifier(input_tensor).ravel()[0]
         logit_value = float(logit.detach().cpu().item())
-        synthetic_probability = float(torch.sigmoid(logit).detach().cpu().item())
+        # Keep probability computation in float64 to avoid precision saturation at large |logit|.
+        if logit_value >= 0:
+            exp_term = np.exp(-logit_value)
+            synthetic_probability = float(1.0 / (1.0 + exp_term))
+        else:
+            exp_term = np.exp(logit_value)
+            synthetic_probability = float(exp_term / (1.0 + exp_term))
         human_score = float((1.0 - synthetic_probability) * 100.0)
         return human_score, synthetic_probability, logit_value
 
@@ -1206,12 +1325,17 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
         """
         Evaluate one image and return score diagnostics for analysis and notebook reporting.
         """
+        source_format = self._infer_source_format(image)
         dire_tensor = self._compute_dire_tensor_with_auto_fallback(image)
-        human_score, synthetic_probability, logit_value = self._score_dire_tensor_with_details(dire_tensor)
+        human_score, synthetic_probability, logit_value = self._score_dire_tensor_with_details(
+            dire_tensor=dire_tensor,
+            source_format=source_format,
+        )
         return {
             "backend": self.backend,
             "requested_device": self.requested_device,
             "runtime_device": self.device,
+            "source_format": source_format,
             "used_cpu_fallback": self._official_cpu_fallback_applied,
             "human_score": human_score,
             "synthetic_probability": synthetic_probability,
@@ -1228,8 +1352,13 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
         """
         scores = []
         for image in result.images:
+            source_format = self._infer_source_format(image)
             dire_tensor = self._compute_dire_tensor_with_auto_fallback(image)
-            scores.append(self._score_dire_tensor(dire_tensor))
+            human_score, _, _ = self._score_dire_tensor_with_details(
+                dire_tensor=dire_tensor,
+                source_format=source_format,
+            )
+            scores.append(human_score)
         return float(np.mean(scores)) if scores else 0.0
 
 
