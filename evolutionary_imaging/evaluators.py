@@ -677,6 +677,44 @@ class DIREAIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData])
             self._reconstruction_model_path = reconstruction_model_path or ""
             self._official_model, self._official_diffusion = None, None
 
+    def __getstate__(self):
+        """
+        Serialize only configuration/state and drop heavyweight runtime model objects.
+
+        This avoids pickling large tensors and non-picklable runtime hooks from
+        diffusers/transformers pipelines (notably in SDXL experimental mode).
+        """
+        state = self.__dict__.copy()
+        for runtime_key in (
+            "_classifier",
+            "_official_model",
+            "_official_diffusion",
+            "_sdxl_pipeline",
+        ):
+            state.pop(runtime_key, None)
+        return state
+
+    def __setstate__(self, state):
+        """
+        Restore evaluator configuration and rebuild runtime model objects.
+        """
+        self.__dict__.update(state)
+
+        self._classifier = self._load_classifier_for_current_device()
+        if self.backend == "adm-ddim-official":
+            self._official_model, self._official_diffusion = self._load_official_components_for_current_device()
+            self._sdxl_pipeline = None
+        else:
+            sdxl_cache_id = (
+                f"DIRE_sdxl_proxy_{self.sdxl_model_id}_{self.device}_{self.sdxl_num_inference_steps}_"
+                f"{self.sdxl_strength}"
+            )
+            self._sdxl_pipeline = get_or_create_model(
+                sdxl_cache_id,
+                lambda: self._setup_sdxl_proxy_pipeline(self.sdxl_model_id),
+            )
+            self._official_model, self._official_diffusion = None, None
+
     def _classifier_cache_id_for_current_device(self) -> str:
         return f"DIRE_classifier_{os.path.abspath(self._classifier_checkpoint_path)}_{self.device}"
 
