@@ -16,6 +16,15 @@ pre-testing/**/*.png
 !pre-testing/testimages/*.png
 notebooks/results
 
+# Generated experiment outputs
+notebooks/AIDResults/
+pre-testing/ai_detector_benchmark/
+pre-testing/ai_detector_benchmark_100_codecs/
+pre-testing/dire/
+pre-testing/ssp/
+pre-testing/dire_eval_experiments_summary.json
+pre-testing/dire_eval_report.json
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
