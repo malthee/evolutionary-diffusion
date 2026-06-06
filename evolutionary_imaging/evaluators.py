@@ -17,7 +17,7 @@ from PIL import Image
 from torchvision import transforms
 from torchvision.models import resnet50
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
-from typing import Union, Tuple, Literal, Dict, Any, Callable
+from typing import Union, Tuple, Literal, Dict, Any, Callable, List
 from torchmetrics.multimodal import CLIPScore, CLIPImageQualityAssessment
 from transformers import pipeline
 
@@ -1418,13 +1418,65 @@ class CLIPScoreEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
         self._model = get_or_create_model(f"CLIPScoreEvaluator_{clip_model}",
                                           lambda: self._setup_model(clip_model))
 
+    @staticmethod
+    def _feature_tensor(features: Any) -> torch.Tensor:
+        """
+        Return the projected CLIP feature tensor from TorchMetrics/Transformers outputs.
+
+        Transformers 5 returns a BaseModelOutputWithPooling from
+        `CLIPModel.get_*_features`, with the projected features in
+        `pooler_output`. Older versions returned the tensor directly.
+        """
+        if isinstance(features, torch.Tensor):
+            return features
+        if hasattr(features, "pooler_output"):
+            return features.pooler_output
+        if isinstance(features, tuple) and features and isinstance(features[0], torch.Tensor):
+            return features[0]
+        raise TypeError(f"Unsupported CLIP feature output type: {type(features)!r}")
+
+    @torch.no_grad()
+    def _score_images(self, images: List[Image.Image]) -> List[float]:
+        """
+        Evaluate images against the configured prompt with CLIPScore semantics.
+        """
+        if not images:
+            return []
+
+        metric = self._model
+        model = metric.model
+        processor = metric.processor
+        device = next(model.parameters()).device
+        image_tensors = [pil_to_tensor(_as_rgb_pil_image(image)).cpu() for image in images]
+
+        image_inputs = processor(images=image_tensors, return_tensors="pt", padding=True)
+        text_inputs = processor(text=[self._prompt] * len(images), return_tensors="pt", padding=True)
+
+        image_features = self._feature_tensor(
+            model.get_image_features(image_inputs["pixel_values"].to(device))
+        )
+        text_features = self._feature_tensor(
+            model.get_text_features(
+                text_inputs["input_ids"].to(device),
+                text_inputs["attention_mask"].to(device),
+            )
+        )
+
+        image_features = image_features / image_features.norm(p=2, dim=-1, keepdim=True)
+        text_features = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
+        score = 100 * (image_features * text_features).sum(dim=-1)
+        return torch.clamp(score, min=0).detach().cpu().tolist()
+
+    @torch.no_grad()
+    def evaluate_scores(self, result: ImageSolutionData) -> List[float]:
+        """
+        Return one CLIP score per image in the provided result.
+        """
+        return self._score_images(result.images)
+
     @torch.no_grad()
     def evaluate(self, result: ImageSolutionData) -> SingleObjectiveFitness:
-        scores = []
-        for img in result.images:
-            t = pil_to_tensor(img)
-            score = self._model(t, self._prompt)
-            scores.append(score.item())
+        scores = self.evaluate_scores(result)
         return np.mean(scores) if scores else 0.0
 
 
