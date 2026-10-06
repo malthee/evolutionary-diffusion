@@ -1,0 +1,13 @@
+# Separate from the inference environment; install the repository with --no-deps.
+embedding-atlas==0.25.0
+safetensors>=0.7,<1
+scikit-learn>=1.7,<2
+umap-learn>=0.5.9,<0.6
+pandas>=2.2,<4
+pyarrow>=20,<25
+Pillow>=12.1,<13
+ipykernel>=6.30,<8
+nbclient>=0.10,<0.11
+nbformat>=5.10,<6
+anywidget>=0.9.21,<0.10
+jupyterlab>=4.4,<5

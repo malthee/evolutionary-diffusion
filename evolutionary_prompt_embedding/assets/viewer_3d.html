@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Genotypic embedding projection</title>
+<style>
+body{margin:0;font:14px system-ui;background:#fafafa;color:#222}header{padding:12px;height:42px}#plot{position:absolute;top:66px;bottom:0;left:0;right:340px}aside{position:absolute;top:66px;bottom:0;right:0;width:316px;overflow:auto;padding:12px}img{max-width:100%;margin-top:8px}pre{white-space:pre-wrap;overflow-wrap:anywhere}button,select,input{font:inherit}#status{margin-left:12px}
+</style>
+<header><label>Colour <select id="colour"><option>fitness</option><option>generation</option><option>island</option></select></label>
+<label><input type="checkbox" id="thumbnails" checked> Image markers</label>
+<span id="status" role="status"></span></header>
+<div id="plot" aria-label="Rotate and zoom the 3D embedding projection"></div>
+<aside><label>Inspect record <select id="record"><option value="">Select a point or record</option></select></label>
+<div id="details" aria-live="polite">Click any point to inspect its embedding and images.</div></aside>
+<script src="__DECK_URL__"></script>
+<script>
+(async () => {
+  const data = await (await fetch('__DATA_URL__')).json();
+  const status = document.getElementById('status');
+  status.textContent = `${data.points.length} points; ${data.thumbnail_count} image markers`;
+  const colourSelector = document.getElementById('colour');
+  const objectiveCount = data.points.reduce((n,p)=>Math.max(n,Array.isArray(p.fitness_original)?p.fitness_original.length:0),0);
+  for(let i=0;i<objectiveCount;i++) {
+    const option=document.createElement('option');option.value=`objective_${i}`;
+    const names=data.points.find(p=>p.objective_names.length)?.objective_names || [];
+    option.textContent=names[i] || `Objective ${i}`;colourSelector.append(option);
+  }
+  const selector = document.getElementById('record');
+  const details = document.getElementById('details');
+  const byId = new Map(data.points.map(p => [p.record_id, p]));
+  for (const p of data.points) {
+    const option = document.createElement('option'); option.value = p.record_id;
+    option.textContent = `g${p.generation} / island ${p.island} / ${p.record_id}`; selector.append(option);
+  }
+  function inspect(p) {
+    if (!p) return;
+    selector.value = p.record_id; details.replaceChildren();
+    const pre = document.createElement('pre');
+    pre.textContent = JSON.stringify({record_id:p.record_id,generation:p.generation,island:p.island,
+      fitness:p.fitness_original,objective_names:p.objective_names,metadata:p.metadata,tensors:p.tensor_spec,neighbor_space:p.neighbor_space},null,2);
+    details.append(pre);
+    if (!p.image_count) { const text=document.createElement('p');text.textContent='No images accompany this embedding.';details.append(text); }
+    p.images.forEach((url,i) => {
+      if (!url) {const text=document.createElement('p');text.textContent=`Image ${i}: file missing`;details.append(text);return;}
+      const image=document.createElement('img');image.src=url;image.alt=`Candidate image ${i}`;
+      image.onerror=()=>{image.replaceWith(document.createTextNode(`Image ${i}: unavailable`));};details.append(image);
+    });
+    const label=document.createElement('p');label.textContent=p.neighbor_space;details.append(label);
+    p.neighbors.forEach((id,i)=>{
+      const button=document.createElement('button');button.textContent=`Neighbour ${i+1} (${p.neighbor_distances[i].toPrecision(4)})`;
+      button.onclick=()=>inspect(byId.get(id));button.disabled=!byId.has(id);details.append(button);
+    });
+  }
+  selector.onchange=()=>inspect(byId.get(selector.value));
+  let view;
+  function colourScale() {
+    const mode=document.getElementById('colour').value;
+    const value=p=>mode.startsWith('objective_') ? p.fitness_original?.[Number(mode.split('_')[1])] : (mode==='island' ? Number(p.island)||0 : p[mode]);
+    let minimum=Infinity, maximum=-Infinity;
+    for (const p of data.points) {const v=value(p);if(Number.isFinite(v)){minimum=Math.min(minimum,v);maximum=Math.max(maximum,v);}}
+    return p=>{const v=value(p);const t=Number.isFinite(v)?(v-minimum)/Math.max(maximum-minimum,1e-12):0.5;
+      return [Math.round(30+220*t),80,Math.round(240-200*t),220];};
+  }
+  function layers() {
+    const result=[new deck.PointCloudLayer({id:'points',data:data.points,coordinateSystem:deck.COORDINATE_SYSTEM.CARTESIAN,
+      getPosition:p=>p.position,getColor:colourScale(),pointSize:4,pickable:true,onClick:({object})=>inspect(object)})];
+    if(document.getElementById('thumbnails').checked) data.pages.forEach((page,i)=>result.push(new deck.IconLayer({
+      id:`images-${i}`,data:page.points,coordinateSystem:deck.COORDINATE_SYSTEM.CARTESIAN,
+      getPosition:p=>p.position,iconAtlas:page.image,iconMapping:page.mapping,getIcon:p=>p.icon,
+      getSize:40,billboard:true,pickable:true,onClick:({object})=>inspect(object)})));
+    return result;
+  }
+  try {
+    view=new deck.Deck({parent:document.getElementById('plot'),views:new deck.OrbitView(),
+      initialViewState:{target:[0,0,0],rotationOrbit:20,rotationX:20,zoom:0},controller:true,
+      getTooltip:({object})=>object?`Generation ${object.generation}, fitness ${object.fitness}`:null,layers:layers()});
+    document.getElementById('colour').onchange=()=>view.setProps({layers:layers()});
+    document.getElementById('thumbnails').onchange=()=>view.setProps({layers:layers()});
+  } catch(error) { status.textContent=`3D rendering unavailable: ${error.message}. Use the record selector to inspect images.`; }
+})().catch(error=>{document.getElementById('status').textContent=error.message;});
+</script>
+</html>

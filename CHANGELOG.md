@@ -1,5 +1,13 @@
 # Changelog for the evolutionary package
 
+## 0.13.0 (06.10.2026)
+
+- BREAKING: Replace `TensorboardEmbedVisualizer` and its TensorFlow/TensorBoard dependencies with viewer-independent embedding archives. Experiment notebooks now use independent `save_embeddings` and `save_images` flags, both enabled by default.
+- Persist original token and optional pooled tensors losslessly in generation/island Safetensors shards capped at 256 MiB, with full-precision objectives, optional image associations, metadata, checksums and readable interrupted runs.
+- Migrate GA, OSGA, NSGA-II/III/U-NSGA-III, island GA and embedding-relations notebooks to the shared archive writer, including initial/final generation coverage and multiple images per candidate.
+- Add a separate local analysis notebook and locked environment with cached PCA, UMAP and t-SNE projections, Embedding Atlas 2D exploration and deck.gl 3D inspection with optional image galleries.
+- Document archive layout, image-optional workflows, storage estimates and analysis setup; retain experiment checkpoints and image-grid/video workflows separately.
+
 ## 0.12.0 (06.10.2026)
 
 - Correct NSGA-II elitist parent/offspring survival and default normalized crowding.

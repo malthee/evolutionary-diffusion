@@ -31,8 +31,9 @@ ROOT = Path(__file__).resolve().parents[1]
         ("unsga3", U_NSGA_III, 10),
     ],
 )
+@pytest.mark.parametrize("save_embeddings", [False, True])
 def test_variant_configuration_and_json_export(
-    monkeypatch, tmp_path, variant, cls, objectives
+    monkeypatch, tmp_path, variant, cls, objectives, save_embeddings
 ):
     def forbidden(*args, **kwargs):
         pytest.fail("No optimization or model evaluation is allowed in this test.")
@@ -46,9 +47,6 @@ def test_variant_configuration_and_json_export(
     creator = SimpleNamespace(create_solution=forbidden)
     evaluator = SimpleNamespace(evaluate=forbidden)
     modules = {
-        "evolutionary_prompt_embedding.tensorboard_embed_visualizer": {
-            "TensorboardEmbedVisualizer": lambda *args: object()
-        },
         "evolutionary_prompt_embedding.value_ranges": {
             "SDXLTurboEmbeddingRange": Range,
             "SDXLTurboPooledEmbeddingRange": Range,
@@ -81,18 +79,24 @@ def test_variant_configuration_and_json_export(
         c.source for c in notebook.cells if "run_configuration = " in c.source
     ).replace('algorithm_variant = "unsga3"', f'algorithm_variant = "{variant}"')
     config = config.replace(
-        "visualizer = TensorboardEmbedVisualizer",
-        f"metrics = metrics[:{objectives}]\nvisualizer = TensorboardEmbedVisualizer",
+        "algorithm_variant = ",
+        f"metrics = metrics[:{objectives}]\nalgorithm_variant = ",
     )
     direction_count = 10 if variant == "unsga3" and objectives == 2 else 20
     config = config.replace(
         "num_reference_directions = 20", f"num_reference_directions = {direction_count}"
     )
     namespace = dict(
-        torch=torch, Path=Path, checkout=ROOT, save_images=False, use_visualizer=False
+        torch=torch,
+        Path=Path,
+        checkout=ROOT,
+        save_images=False,
+        save_embeddings=save_embeddings,
+        run_dir=tmp_path / "archive",
     )
     exec(compile(config, "NSGA configuration", "exec"), namespace)
     alg = namespace["nsga"]
+    assert (namespace["run_dir"] / "manifest.json").exists() is save_embeddings
     assert type(alg) is cls and alg.population_size == 20 and alg.num_generations == 10
     assert len(namespace["metrics"]) == objectives
     assert namespace["run_configuration"]["expected_uncached_evaluations"] == 200
@@ -106,7 +110,8 @@ def test_variant_configuration_and_json_export(
             Path=Path,
             checkout=ROOT,
             save_images=False,
-            use_visualizer=False,
+            save_embeddings=save_embeddings,
+            run_dir=tmp_path / "alternate-archive",
         )
         exec(
             compile(
@@ -153,4 +158,7 @@ def test_variant_configuration_and_json_export(
     assert data["actual_evaluation_count"] == 20 and data["completed_generations"] == 1
     assert data["pareto_fitness"] == [candidate.fitness]
     assert data["lineage"][0]["creation_kind"] == "initial"
-    assert data["versions"]["evolutionary"] == "0.12.0" and data["git_revision"]
+    assert data["versions"]["evolutionary"] == importlib.metadata.version(
+        "evolutionary"
+    )
+    assert data["git_revision"]

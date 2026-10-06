@@ -29,7 +29,7 @@ sound_requirements = [
 extras_require = {
     'imaging': torch_diffusers_requirements + imaging_requirements,
     'model_helpers': torch_diffusers_requirements,
-    'prompt_embedding': torch_diffusers_requirements + ['tensorflow~=2.21.0', 'tensorboard>=2.20,<2.21'],
+    'prompt_embedding': torch_diffusers_requirements + ['safetensors>=0.7,<1'],
     'prompt_embedding_utils': [
         'datasets~=4.8.4',
     ] + torch_diffusers_requirements,
@@ -41,7 +41,7 @@ extras_require['all'] = sorted(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.12.0',
+    version='0.13.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
@@ -58,8 +58,8 @@ setup(
                      * model_helpers (evolutionary_model_helpers): Auto-loading different model types on devices. 
                      With additional utility functions. Variation for tensors.
                      * prompt_embedding (evolutionary_prompt_embedding): Using evolutionary_prompt_embeddings to 
-                     generate images and sound and perform evolutionary variation using prompt embeddings. Visualizing the
-                     embeddings using Tensorboard. To be used with `imaging` or `sound` subpackages.
+                     generate images and sound and perform evolutionary variation using prompt embeddings. Original
+                     embeddings are persisted independently for offline analysis. To be used with `imaging` or `sound` subpackages.
                      * prompt_embedding_utils (evolutionary_prompt_embedding.utils): Additional utilities for evaluating
                      the prompt embedding range.
                      * sound (evolutionary_sound): Adding evaluators for sound solutions.
@@ -79,7 +79,7 @@ setup(
         'Programming Language :: Python :: 3.13',
     ],
     package_data={
-        'evolutionary_prompt_embedding': ['tensors/*'],
+        'evolutionary_prompt_embedding': ['tensors/*', 'assets/*'],
     },
     include_package_data=True,
     extras_require=extras_require,

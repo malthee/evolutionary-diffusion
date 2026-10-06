@@ -14,3 +14,13 @@ for operator parameters, evaluation costs, export fields and island restrictions
 The NSGA notebook defaults to U-NSGA-III, with NSGA-II/III comparisons and JSON/pickle
 export. See [configuration and algorithm behavior](../docs/nsga.md) for reference
 directions and implementation limits.
+
+## Embedding persistence and offline visualization
+
+GA, OSGA, NSGA and island GA persist original embeddings incrementally in a
+viewer-independent Safetensors archive. `save_embeddings` and `save_images` are
+independent switches; each experiment has a unique run directory. Analyze it
+locally using [embedding_analysis.ipynb](embedding_analysis.ipynb), which handles
+projection, Embedding Atlas 2D exploration, 3D image markers and optional images.
+See [the archive and analysis guide](embedding_analysis/README.md) for the format,
+separate locked environment, storage estimates and validation commands.

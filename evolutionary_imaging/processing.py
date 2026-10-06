@@ -99,6 +99,25 @@ def save_images_from_generation(population: List[SolutionCandidate[Any, ImageSol
     return paths
 
 
+def save_images_from_generation_grouped(population, generation, ident=None):
+    """Save images using the established layout, grouped by candidate.
+
+    The original flat-list API remains available for existing callers. Grouping
+    uses image counts rather than filenames or candidate indices, so zero and
+    multiple images cannot shift another candidate's association.
+    """
+    paths = save_images_from_generation(population, generation, ident)
+    grouped = []
+    offset = 0
+    for candidate in population:
+        count = len(candidate.result.images)
+        grouped.append(paths[offset:offset + count])
+        offset += count
+    if offset != len(paths):
+        raise ValueError("Saved image count differs from the population")
+    return grouped
+
+
 def get_images_for_candidate(index: int, generation: int, ident: Optional[int] = None) -> List[str]:
     """
     Gets image paths from disk for a candidate identified by generation, index, and optional ident.

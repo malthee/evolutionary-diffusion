@@ -17,6 +17,8 @@ pre-testing/**/*.png
 notebooks/results
 
 # Generated experiment outputs
+embedding_runs/
+analysis_cache/
 notebooks/AIDResults/
 pre-testing/ai_detector_benchmark/
 pre-testing/ai_detector_benchmark_100_codecs/
@@ -151,6 +153,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venv-analysis/
 env/
 venv/
 ENV/

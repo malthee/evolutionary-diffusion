@@ -5,7 +5,6 @@ import random
 import sys
 from pathlib import Path
 from types import ModuleType, SimpleNamespace
-from typing import Generic, TypeVar
 from unittest.mock import Mock
 
 import nbformat
@@ -66,20 +65,15 @@ def test_format_cleared_outputs_syntax_and_single_run_cell(name, run_call):
         ("ga_notebook.ipynb", True),
     ],
 )
+@pytest.mark.parametrize("save_embeddings", [False, True])
 def test_configuration_construction_and_export_without_running(
-    monkeypatch, tmp_path, ordinary, name
+    monkeypatch, tmp_path, ordinary, name, save_embeddings
 ):
     class Range:
         minimum, maximum = -1.0, 1.0
 
         def random_tensor_in_range(self):
             return torch.rand(1, 3, 4)
-
-    EmbedType, LabelType = TypeVar("EmbedType"), TypeVar("LabelType")
-
-    class Visualizer(Generic[EmbedType, LabelType]):
-        def __init__(self, *args, **kwargs):
-            pass
 
     cache = {}
 
@@ -100,18 +94,12 @@ def test_configuration_construction_and_export_without_running(
     fake_evaluators.MultiCLIPIQAEvaluator = Mock(
         side_effect=lambda **kwargs: load_model("iqa")
     )
-    fake_visualizer = ModuleType(
-        "evolutionary_prompt_embedding.tensorboard_embed_visualizer"
-    )
-    fake_visualizer.TensorboardEmbedVisualizer = Visualizer
-    fake_visualizer.EmbeddingVariant = object()
     fake_ranges = ModuleType("evolutionary_prompt_embedding.value_ranges")
     fake_ranges.SDXLTurboEmbeddingRange = fake_ranges.SDXLTurboPooledEmbeddingRange = (
         Range
     )
     for module_name, module in [
         (fake_evaluators.__name__, fake_evaluators),
-        (fake_visualizer.__name__, fake_visualizer),
         (fake_ranges.__name__, fake_ranges),
     ]:
         monkeypatch.setitem(sys.modules, module_name, module)
@@ -134,9 +122,15 @@ def test_configuration_construction_and_export_without_running(
             "offspring_selection = OffspringSelectionConfig(0.6, 1.0, 10.0)",
             "offspring_selection = None",
         )
-    namespace = {"torch": torch, "use_visualizer": False, "save_images": False}
+    namespace = {
+        "torch": torch,
+        "save_embeddings": save_embeddings,
+        "save_images": False,
+        "run_dir": tmp_path / "archive",
+    }
     exec(compile(config_cell, "config", "exec"), namespace)
     algorithm = namespace["ga"]
+    assert (namespace["run_dir"] / "manifest.json").exists() is save_embeddings
     assert algorithm.population_size == (100 if use_pools else 200)
     assert algorithm.num_generations == 100
     assert algorithm.max_evaluations == (10_000 if use_pools else None)
