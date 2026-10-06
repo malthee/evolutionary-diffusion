@@ -144,3 +144,8 @@ export EVOLUTIONARY_DIFFUSION_ALLOW_INSECURE_SSL=1
 ```bash
 pytest tests -q
 ```
+
+### Offspring selection and operator pools
+
+See [configuration, behavior and tracing](docs/osga.md) and the reproducible
+[OSGA notebook](notebooks/ga_osga_notebook.ipynb).

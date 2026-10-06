@@ -1,4 +1,28 @@
 # Changelog for the evolutionary package
+
+## 0.11.0 (06.10.2026)
+
+- Add optional bounded offspring selection, whole-run evaluation limits, fixed-weight
+  variation pools, complete scalar evaluation records and survivor/elite lineage.
+- Changed semantics: `strict_osga=True` strictly improves on the better parent, with bounded
+  retries; reject simultaneous explicit offspring-selection configuration.
+- Add discrete/continuous prompt and pooled operators, fix spherical mutation for
+  arbitrary leading dimensions and nonunit norms, and handle SLERP degeneracies.
+- Correct uniform crossover's documented swap-rate endpoints; add fresh fixed-noise
+  diffusion generators and a cleared, reproducible OSGA notebook copy.
+- Normalize evaluator and cached fitness to native Python scalars so LAION/NumPy
+  results produce accurate success summaries and serializable JSON records.
+- Keep repaired outputs inside bounds after dtype conversion, including float16;
+  reject intervals with no representable output value.
+- Apply working-checkout installation, seeding after model setup, fresh fixed
+  diffusion noise and completed-generation analysis consistently to the GA, OSGA,
+  island-GA and NSGA templates. Preserve their existing algorithm settings.
+- Export configuration, actual costs, lineage, dependency versions, Git changes
+  and untracked implementation source from both standalone GA notebooks while
+  retaining pickle workflows. Construct operators from the exported parameters.
+- Add deterministic distribution-quantile, NumPy-score/export, cold/warm setup,
+  dtype-boundary and mocked diffusion tests; no optimization experiments run.
+
 ## 0.10.1 (05.05.2026)
 * Add SSP and DIRE AI detection evaluators and variants:
   * SSP (`SSPAIDetectionImageEvaluator`)

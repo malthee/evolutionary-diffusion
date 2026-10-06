@@ -1,7 +1,8 @@
-from time import time
-from typing import List, Sequence, Literal, Generic, Iterable, Optional, Tuple, Dict
 from dataclasses import dataclass, replace
-from evolutionary.evolution_base import SolutionCandidate, Fitness
+from time import time
+from typing import Dict, Generic, Iterable, List, Literal, Optional, Sequence, Tuple
+
+from evolutionary.evolution_base import Fitness, SolutionCandidate
 from evolutionary.history import SolutionHistoryItem, SolutionHistoryKey
 
 FitnessList = List[Fitness]
@@ -10,6 +11,43 @@ TimeList = List[float]
 """List of time values in seconds."""
 Stages = Literal["evaluation", "creation", "post_evaluation"]
 """Stages for time tracking."""
+
+
+@dataclass
+class EvaluationRecord:
+    """Scalar metadata only; survivor_key is assigned after selection and elitism."""
+
+    evaluation_id: int
+    generation: int
+    ident: Optional[int]
+    creation_kind: str
+    parent_keys: Tuple[SolutionHistoryKey, ...]
+    parent_fitness: Tuple[float, ...]
+    crossover_name: Optional[str]
+    mutation_name: Optional[str]
+    fitness: float
+    comparison_factor: Optional[float] = None
+    threshold: Optional[float] = None
+    successful: Optional[bool] = None
+    survivor_key: Optional[SolutionHistoryKey] = None
+
+
+@dataclass
+class GenerationSummary:
+    generation: int
+    ident: Optional[int]
+    attempts: int
+    successes: int
+    unsuccessful_survivors: int
+    quota: int
+    selection_pressure: float
+    evaluation_count: int  # Cumulative evaluator calls, including initialization.
+    completed: bool
+    termination_reason: Optional[str] = None
+    creation_seconds: float = 0.0
+    evaluation_seconds: float = 0.0
+    displaced_evaluation_ids: Tuple[int, ...] = ()
+
 
 class StatisticsTracker(Generic[Fitness]):
     """
@@ -25,7 +63,52 @@ class StatisticsTracker(Generic[Fitness]):
         self._creation_time: TimeList = []
         self._post_evaluation_time: TimeList = []
         self._time_trackers = {}
+        self.evaluation_records: List[EvaluationRecord] = []
+        self.generation_summaries: List[GenerationSummary] = []
         self._solution_history: Dict[SolutionHistoryKey, SolutionHistoryItem] = {}
+
+    def operator_summary(self) -> List[dict]:
+        """Group offspring outcomes by generation and operator pair.
+
+        success_rate = successes / attempts (None for ordinary GA).
+        survival_rate = final survivors / attempts. Elite carryover is excluded.
+        These are joint outcomes, not isolated causal effects of either operator.
+        """
+        groups = {}
+        for record in self.evaluation_records:
+            if record.creation_kind != "offspring":
+                continue
+            key = (
+                record.generation,
+                record.ident,
+                record.crossover_name,
+                record.mutation_name,
+            )
+            group = groups.setdefault(
+                key,
+                dict(
+                    generation=record.generation,
+                    ident=record.ident,
+                    crossover_name=record.crossover_name,
+                    mutation_name=record.mutation_name,
+                    attempts=0,
+                    successes=0,
+                    classified_attempts=0,
+                    survivors=0,
+                ),
+            )
+            group["attempts"] += 1
+            group["successes"] += record.successful is True
+            group["classified_attempts"] += record.successful is not None
+            group["survivors"] += record.survivor_key is not None
+        for group in groups.values():
+            group["success_rate"] = (
+                group["successes"] / group["classified_attempts"]
+                if group["classified_attempts"]
+                else None
+            )
+            group["survival_rate"] = group["survivors"] / group["attempts"]
+        return list(groups.values())
 
     def _custom_time_tracking(self, stage: Stages, seconds: float):
         """
@@ -51,10 +134,16 @@ class StatisticsTracker(Generic[Fitness]):
         if isinstance(fitness_values[0], Sequence):  # Multi-objective
             zipped_fitness = list(zip(*fitness_values))
             # Track each objective separately
-            self._best_fitness.append([max(obj_values) for obj_values in zipped_fitness])
-            self._worst_fitness.append([min(obj_values) for obj_values in zipped_fitness])
-            self._avg_fitness.append([sum(obj_values) / len(obj_values) for obj_values in zipped_fitness])
-        else: # Single-objective
+            self._best_fitness.append(
+                [max(obj_values) for obj_values in zipped_fitness]
+            )
+            self._worst_fitness.append(
+                [min(obj_values) for obj_values in zipped_fitness]
+            )
+            self._avg_fitness.append(
+                [sum(obj_values) / len(obj_values) for obj_values in zipped_fitness]
+            )
+        else:  # Single-objective
             self._best_fitness.append(max(fitness_values))
             self._worst_fitness.append(min(fitness_values))
             self._avg_fitness.append(sum(fitness_values) / len(fitness_values))
@@ -78,7 +167,9 @@ class StatisticsTracker(Generic[Fitness]):
     def add_history_item(self, item: SolutionHistoryItem) -> None:
         self.solution_history[item.key] = item
 
-    def history_string(self, key: SolutionHistoryKey, depth: int = 3, indent: str = "") -> str:
+    def history_string(
+        self, key: SolutionHistoryKey, depth: int = 3, indent: str = ""
+    ) -> str:
         """
         Recursively creates a history string of a solution up to a specified depth.
         """
@@ -102,14 +193,22 @@ class StatisticsTracker(Generic[Fitness]):
         After removing a candidate from an island, update the history of that island so the indices are correct.
         """
         keys_to_update = [
-            key for key in self._solution_history
-            if key.index > remove_key.index and key.generation == remove_key.generation and key.ident == remove_key.ident
+            key
+            for key in self._solution_history
+            if key.index > remove_key.index
+            and key.generation == remove_key.generation
+            and key.ident == remove_key.ident
         ]
 
         for old_key in keys_to_update:
             item = self._solution_history.pop(old_key)
             # Create a new history item with the index shifted by 1.
-            new_item = replace(item, key=SolutionHistoryKey(index=item.index - 1, generation=item.generation, ident=item.ident))
+            new_item = replace(
+                item,
+                key=SolutionHistoryKey(
+                    index=item.index - 1, generation=item.generation, ident=item.ident
+                ),
+            )
             self._solution_history[new_item.key] = new_item
 
     def avg_fitness_stats(self):
@@ -128,7 +227,9 @@ class StatisticsTracker(Generic[Fitness]):
         """
         af = getattr(self, "_avg_fitness", None)
         if not isinstance(af, (list, tuple)) or len(af) == 0:
-            raise ValueError("avg_fitness must be a non-empty list (of numbers) or list of lists.")
+            raise ValueError(
+                "avg_fitness must be a non-empty list (of numbers) or list of lists."
+            )
 
         first_raw = af[0]
         last_raw = af[-1]
@@ -141,6 +242,7 @@ class StatisticsTracker(Generic[Fitness]):
                 return list(x)
             try:
                 import numpy as np  # optional
+
                 if isinstance(x, np.ndarray):
                     return x.astype(float).tolist()
             except Exception:
@@ -162,29 +264,35 @@ class StatisticsTracker(Generic[Fitness]):
             if a != 0.0:
                 pct_diff = (b - a) / a * 100.0
             else:
-                denom = (abs(a) + abs(b))
+                denom = abs(a) + abs(b)
                 # symmetric % difference, bounded [-200, 200]
                 pct_diff = 0.0 if denom == 0 else 2.0 * (b - a) / denom * 100.0
 
-            per_entry.append({
-                "index": i,
-                "first": a,
-                "last": b,
-                "abs_diff": abs_diff,
-                "pct_diff": pct_diff,  # signed percent change
-            })
+            per_entry.append(
+                {
+                    "index": i,
+                    "first": a,
+                    "last": b,
+                    "abs_diff": abs_diff,
+                    "pct_diff": pct_diff,  # signed percent change
+                }
+            )
 
         sum_first = sum(first)
         sum_last = sum(last)
 
         # Aggregates (“together”)
-        sum_of_abs_diffs = sum(row["abs_diff"] for row in per_entry)  # L1 across entries
+        sum_of_abs_diffs = sum(
+            row["abs_diff"] for row in per_entry
+        )  # L1 across entries
         abs_diff_of_totals = abs(sum_last - sum_first)  # |Δ totals|
         if sum_first != 0.0:
             pct_diff_of_totals = (sum_last - sum_first) / sum_first * 100.0
         else:
             denom = abs(sum_first) + abs(sum_last)
-            pct_diff_of_totals = 0.0 if denom == 0 else 2.0 * (sum_last - sum_first) / denom * 100.0
+            pct_diff_of_totals = (
+                0.0 if denom == 0 else 2.0 * (sum_last - sum_first) / denom * 100.0
+            )
 
         mean_pct_diff = (sum(row["pct_diff"] for row in per_entry) / n) if n else 0.0
 
