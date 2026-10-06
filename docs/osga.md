@@ -1,10 +1,9 @@
 # Offspring selection and operator pools
 
 `GeneticAlgorithm` supports fixed random variation pools, scalar evaluation records,
-and optional offspring selection. Its creator, evaluator, selector, crossover and
-mutator interfaces are unchanged. `notebooks/ga_osga_notebook.ipynb` is a cleared
-copy of the existing GA notebook with an initial reproducible configuration. No
-optimization experiments have been performed as part of this implementation.
+and optional offspring selection through its existing interfaces. The cleared
+[`ga_osga_notebook.ipynb`](../notebooks/ga_osga_notebook.ipynb) configures the full pool;
+no optimization experiments have been run.
 
 ```python
 from evolutionary.algorithms.ga import GeneticAlgorithm, OffspringSelectionConfig
@@ -47,12 +46,9 @@ It requires strict improvement over the better parent and has bounded retries.
 This intentionally changes the old worse-parent `>=` behavior. Combining this
 legacy flag with explicit `offspring_selection` raises `ValueError`.
 
-There are no threshold schedules, adaptive weights, probabilistic acceptance,
-equality tolerances, selection before mutation, or configurable failure/survivor
-policies. OSGA and evaluation limits currently require standalone GA execution:
-`IslandModel.run()` rejects them before creating candidates because its existing
-migration loop has no protocol for interrupted island generations. Ordinary
-unbounded GA islands remain supported.
+OSGA and evaluation limits require standalone GA execution: `IslandModel.run()`
+rejects them because its migration loop cannot handle interrupted generations.
+Ordinary unbounded GA islands remain supported.
 
 ## Selection rules and fidelity
 
@@ -72,7 +68,6 @@ slots from unsuccessful children without replacement. Ratio zero still construct
 `N` children; ratio one admits only successes. Then reinsert the previous
 population's elites by replacing the worst selected children. This ordering means
 successful children can be displaced and final survivors need not meet the quota.
-The quota describes the constructed offspring population, before elitism.
 
 Selection pressure is evaluated offspring attempts divided by `N`. If pressure or
 the whole-run evaluation cap prevents a complete offspring population meeting the
@@ -165,17 +160,15 @@ and reuses its original evaluation ID. Operator names are `None` when skipped.
 Named pool choices are recorded immediately; individual operators use class names.
 
 `statistics.evaluation_records` contains scalar `EvaluationRecord` dataclasses for
-initial evaluations and every evaluated child, without images/tensors. Evaluation
-IDs start at one and are unique within an algorithm run; combine them with the
-run identity/algorithm `ident` across runs. Records hold target generation,
-parent history keys/fitness, operators, child fitness, comparison factor, threshold,
-and success classification. Classification is `None` for initialization/ordinary
-GA. Fitness, thresholds and classification use native Python floats/bools, including
-when the evaluator returns NumPy scalars, so JSON export and summary counts agree
-with the selection decision. `survivor_key` is assigned only to final survivors of
-a committed population.
-Rejected, elitism-displaced, and uncommitted attempts have `None`; displacement
-does not rewrite their success classification.
+initialization and every evaluated child, including rejected attempts. Each holds
+the target generation, algorithm `ident`, parent history keys/fitness, operators,
+child fitness, comparison factor, threshold and success classification. Evaluation
+IDs start at one and are unique within a run; retain run identity when combining
+exports. Classification is `None` for
+initialization/ordinary GA; NumPy scores are normalized to Python floats/bools.
+`survivor_key` identifies final survivors of committed populations; rejected,
+elitism-displaced and uncommitted attempts have `None`. Displacement does not change
+success classification. Records contain no images or tensors.
 
 `statistics.generation_summaries` holds attempts, successes, unsuccessful final
 survivors, quota, pressure, cumulative evaluation count, completion/termination and
@@ -194,37 +187,26 @@ carryovers are excluded. Marginalizing these pairs by one operator describes
 outcomes of combinations, not isolated causal effects. Generation and evaluation
 indices permit later phase analysis without phase configuration.
 
-The evolutionary notebooks load models before seeding Python, NumPy and Torch,
-then build initial embeddings. This avoids changing the variation stream between
-cold model initialization and cached setup in the same kernel.
-Explicit noise seeds recreate separate diffusion generators on every candidate
-and retry; omitted seeds retain the existing advancing-stream behavior. Fixed
-seeds do not guarantee identical results across different devices, library
-versions or nondeterministic kernels. The copied notebook retains image saving,
-visualization, optional secondary analysis and pickle workflows, and exports JSON
-configuration, operator parameters/weights, seeds, versions, checkout revision/diff,
-untracked implementation source, actual costs, termination, all evaluation records,
-lineage and existing statistics. Both standalone GA notebooks export this metadata;
-the original retains its population 200 and ordinary operators, while the OSGA
-copy uses population 100 and the full pool. Operator configuration dictionaries
-also construct the operators, avoiding divergence between recorded and actual
-parameters. Save notebooks before running, keep the source unchanged through
-export, and commit the feature before published experiments. Only explicit run
-cells start optimization. Island-GA and NSGA share checkout installation,
-seeding-after-model-setup and fixed noise; their algorithm settings remain intact.
+The evolutionary notebooks install the working checkout and load models before
+seeding Python, NumPy and Torch and constructing embeddings. This preserves the
+variation stream across cold and cached model setup. Fixed noise seeds recreate
+separate diffusion generators per candidate/retry; omitted seeds retain the
+advancing-stream behavior. Results can still vary across devices, versions and
+nondeterministic kernels.
+
+Both standalone GA notebooks retain visualization, image saving and pickle, and
+export JSON configuration, operator parameters/weights, seeds, versions, checkout
+revision/diff, untracked implementation source, costs, termination, evaluation
+records, lineage and existing statistics. Operator configuration also constructs
+the operators. The original keeps population 200 and ordinary operators; the OSGA
+copy uses population 100 and the full pool. Save notebooks before running, keep
+source unchanged through export, and commit before published experiments. Only
+explicit run cells start optimization. Island-GA and NSGA share the installation,
+seeding and fixed-noise setup while retaining their algorithm settings.
 
 ## Verification
-
-Success criteria: strict threshold endpoints/equality; rounded quota over `N`;
-uniform failure sampling; elitism after selection; bounded retries/evaluation
-calls; complete-only callbacks/history; traceable rejected/displaced attempts;
-seeded, bounded operators without parent mutation; identical mocked diffusion
-noise across candidates/retries; numerical BLX, bounded SBX and polynomial
-quantiles; final-dtype bounds; identical cold/warm variation state; cleared,
-syntactically valid notebooks with constructible GA configuration and JSON export.
 
 Run the unit and mocked integration suite with `python -m pytest tests` in a test
 environment containing the project's dependencies plus pytest, nbformat and IPython.
 Notebook tests construct configuration with mocked models and exercise JSON export;
-they never execute the optimization or analysis cells. No production dependency
-was added.
+they never execute optimization or analysis cells.

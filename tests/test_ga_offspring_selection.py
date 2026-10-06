@@ -114,6 +114,9 @@ def test_numpy_evaluator_scores_preserve_classification_counts_and_json(scalar_t
             ],
             "operators": algorithm.statistics.operator_summary(),
             "fitness": algorithm.statistics.best_fitness,
+            "lineage": [
+                asdict(item) for item in algorithm.statistics.solution_history.values()
+            ],
         },
         allow_nan=False,
     )
@@ -342,7 +345,7 @@ def test_invalid_ga_config(kwargs):
         ga([], **kwargs)
 
 
-def test_records_summary_and_lineage_are_json_serializable():
+def test_operator_pool_traces_and_summary_counts():
     algorithm = ga(
         [11.0, 12.0],
         elitism_count=1,
@@ -364,14 +367,6 @@ def test_records_summary_and_lineage_are_json_serializable():
         summary["survivors"] == 1
         and summary["success_rate"] == 1
         and summary["survival_rate"] == 0.5
-    )
-    json.dumps(
-        dict(
-            evaluations=[asdict(r) for r in records],
-            generations=[asdict(s) for s in algorithm.statistics.generation_summaries],
-            lineage=[asdict(i) for i in algorithm.statistics.solution_history.values()],
-        ),
-        allow_nan=False,
     )
 
 

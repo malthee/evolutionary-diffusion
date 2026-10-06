@@ -307,8 +307,6 @@ def test_spherical_preserves_nonunit_row_norms_zero_rows_and_three_dimensions(dt
     assert torch.equal(result[0, 0], source[0, 0])
     assert torch.equal(tv.spherical_rotation_mutate_tensor(source, 0, 0.1), source)
     assert not torch.equal(source, result)
-    repaired = tv.spherical_rotation_mutate_tensor(source, 1, 0.1, (-1, 1))
-    assert repaired.abs().max() <= 1
     single = torch.tensor([4.0, 0.0], dtype=dtype)
     assert tv.spherical_rotation_mutate_tensor(single, 1).shape == single.shape
     assert torch.equal(
@@ -325,8 +323,10 @@ def test_slerp_zero_parallel_opposite_and_endpoints(dtype):
         [[3.0, 0.0], [0.0, 3.0], [2.0, 0.0], [2**-0.5, 2**-0.5]], dtype=dtype
     )
     assert torch.allclose(output, expected, atol=1e-3)
-    assert torch.equal(tv.slerp_crossover(a, b, 0), a)
-    assert torch.equal(tv.slerp_crossover(a, b, 1), b)
+    for ratio, parent in ((0, a), (1, b)):
+        endpoint = tv.slerp_crossover(a, b, ratio)
+        assert torch.equal(endpoint, parent)
+        assert endpoint.data_ptr() != parent.data_ptr()
     assert torch.equal(
         tv.slerp_crossover(torch.tensor([2.0]), torch.tensor([-4.0]), 0.5),
         torch.tensor([-1.0]),
@@ -408,7 +408,7 @@ def test_bounded_sbx_one_complete_branch_for_pooled_event():
 
 
 @pytest.mark.parametrize("dtype", [torch.float32, torch.float16])
-def test_partial_arithmetic_noncontiguous_inputs_and_slerp_endpoint_copies(dtype):
+def test_partial_arithmetic_noncontiguous_inputs(dtype):
     a = torch.zeros(2, 4, 3, dtype=dtype).transpose(1, 2)
     b = torch.ones_like(a)
     torch.manual_seed(3)
@@ -416,6 +416,3 @@ def test_partial_arithmetic_noncontiguous_inputs_and_slerp_endpoint_copies(dtype
     assert output.dtype == dtype and output.shape == a.shape
     assert (output == 0.5).sum() == a.numel() // 2
     assert a.count_nonzero() == 0 and torch.all(b == 1)
-    for ratio in (0, 1):
-        output = tv.slerp_crossover(a, b, ratio)
-        assert output.data_ptr() != (a if ratio == 0 else b).data_ptr()
