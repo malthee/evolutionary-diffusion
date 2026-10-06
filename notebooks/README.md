@@ -10,3 +10,7 @@ GA, OSGA, island-GA and NSGA use the working checkout, seed after model setup an
 recreate fixed diffusion noise. Both standalone GA notebooks save JSON and pickle;
 analysis uses completed generations. See [configuration and reproducibility](../docs/osga.md)
 for operator parameters, evaluation costs, export fields and island restrictions.
+
+The NSGA notebook defaults to U-NSGA-III, with NSGA-II/III comparisons and JSON/pickle
+export. See [configuration and algorithm behavior](../docs/nsga.md) for reference
+directions and implementation limits.

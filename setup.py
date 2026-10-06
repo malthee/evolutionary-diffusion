@@ -41,7 +41,7 @@ extras_require['all'] = sorted(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.11.0',
+    version='0.12.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
     description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.

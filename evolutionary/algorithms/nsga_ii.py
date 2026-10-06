@@ -1,234 +1,137 @@
 import random
 from typing import List, Optional
 
-from evolutionary.evolution_base import A, R, MultiObjectiveFitness, SolutionCreator, Selector, Mutator, \
-    Crossover, SolutionCandidate
+from evolutionary.algorithms._multi_objective import _MultiObjectiveAlgorithm
 from evolutionary.algorithms.algorithm_base import Algorithm
 from evolutionary.evaluators import MultiObjectiveEvaluator
-from evolutionary.history import SolutionSourceMeta, SOLUTION_SOURCE_META_KEY
-from evolutionary.statistics import SolutionHistoryKey, SolutionHistoryItem
+from evolutionary.evolution_base import (
+    A,
+    Crossover,
+    MultiObjectiveFitness,
+    Mutator,
+    R,
+    Selector,
+    SolutionCandidate,
+    SolutionCreator,
+)
 
 
 class NSGASolutionCandidate(SolutionCandidate[A, R, MultiObjectiveFitness]):
     def __init__(self, arguments: A, result: R):
         super().__init__(arguments, result)
-        self.domination_count = 0
-        self.dominated_solutions = []
         self.rank = None
-        self.crowding_distance = 0
+        self.crowding_distance = None
 
 
 class NSGATournamentSelector(Selector[MultiObjectiveFitness]):
-    """
-    Binary-Tournament selection for NSGA-II based on rank and crowding distance.
-    """
+    """Original crowded comparison: lower rank, then larger crowding distance."""
 
     def select(self, candidates: List[NSGASolutionCandidate]) -> NSGASolutionCandidate:
-        candidate_a, candidate_b = random.sample(candidates, 2)
-
-        if candidate_a.rank == candidate_b.rank:  # If ranks are equal, decide by crowding distance
-            return candidate_a if candidate_a.crowding_distance > candidate_b.crowding_distance else candidate_b
-        else:  # Else, decide by rank
-            return candidate_a if candidate_a.rank < candidate_b.rank else candidate_b
-
-
-def _dominates(individual1, individual2):
-    """Check if individual1 dominates individual2."""
-    better_in_one = False
-    for i in range(len(individual1.fitness)):
-        if individual1.fitness[i] < individual2.fitness[i]:
-            return False
-        elif individual1.fitness[i] > individual2.fitness[i]:
-            better_in_one = True
-    return better_in_one
+        first, second = random.choices(candidates, k=2)
+        if any(c.rank is None or c.crowding_distance is None for c in (first, second)):
+            raise RuntimeError(
+                "NSGA-II tournament requires evaluated rank and crowding distance."
+            )
+        if first.rank != second.rank:
+            return first if first.rank < second.rank else second
+        if first.crowding_distance != second.crowding_distance:
+            return (
+                first if first.crowding_distance > second.crowding_distance else second
+            )
+        return random.choice((first, second))
 
 
-class NSGA_II(Algorithm[A, R, MultiObjectiveFitness]):
-    def __init__(self,
-                 num_generations: int,
-                 population_size: int,
-                 solution_creator: SolutionCreator[A, R],
-                 selector: Selector[MultiObjectiveFitness],
-                 mutator: Mutator[A],
-                 crossover: Crossover[A],
-                 evaluator: MultiObjectiveEvaluator[R],
-                 initial_arguments: List[A],
-                 mutation_rate: float = 0.1,
-                 crossover_rate: float = 0.9,
-                 elitism_count: Optional[int] = None,
-                 # Set to true if you are dealing with objectives with different scales
-                 normalize_crowding_distance: bool = False,
-                 post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
-                 # Called after fronts are sorted, can access fronts through self.fronts
-                 post_non_dominated_sort_callback: Optional[Algorithm.GenerationCallback] = None,
-                 ident: Optional[int] = None):
+class NSGA_II(_MultiObjectiveAlgorithm[A, R]):
+    """Elitist parent/offspring survival with front-wise crowding (Deb et al., 2002)."""
+
+    candidate_type = NSGASolutionCandidate
+
+    def __init__(
+        self,
+        num_generations: int,
+        population_size: int,
+        solution_creator: SolutionCreator[A, R],
+        selector: Selector[MultiObjectiveFitness],
+        mutator: Mutator[A],
+        crossover: Crossover[A],
+        evaluator: MultiObjectiveEvaluator[R],
+        initial_arguments: List[A],
+        mutation_rate: float = 0.1,
+        crossover_rate: float = 0.9,
+        elitism_count: Optional[int] = None,
+        normalize_crowding_distance: bool = True,
+        post_evaluation_callback: Optional[Algorithm.GenerationCallback] = None,
+        post_non_dominated_sort_callback: Optional[Algorithm.GenerationCallback] = None,
+        ident: Optional[int] = None,
+    ):
+        if elitism_count not in (None, 0):
+            raise ValueError(
+                "NSGA-II already uses elitist union survival; omit elitism_count."
+            )
         super().__init__(
-            num_generations=num_generations,
-            population_size=population_size,
-            solution_creator=solution_creator,
-            evaluator=evaluator,
-            initial_arguments=initial_arguments,
-            post_evaluation_callback=post_evaluation_callback,
-            ident=ident
+            num_generations,
+            population_size,
+            solution_creator,
+            evaluator,
+            initial_arguments,
+            post_evaluation_callback,
+            ident,
         )
-        self._selector = selector
-        self._mutator = mutator
-        self._mutation_rate = mutation_rate
-        self._crossover = crossover
-        self._crossover_rate = crossover_rate
-        self._elitism_count = elitism_count
-        # Normalize objective values, so they contribute equally to crowding distance calculation.
+        self._configure_variation(
+            selector,
+            mutator,
+            crossover,
+            mutation_rate,
+            crossover_rate,
+            post_non_dominated_sort_callback,
+        )
         self._normalize_crowding_distance = normalize_crowding_distance
-        self._post_non_dominated_sort_callback = post_non_dominated_sort_callback
-        self._population: List[NSGASolutionCandidate] = []  # Override the type to NSGA-II's solution candidate
-        self._fronts = [[]]
-        self._cached_best_solution = None
 
     def _fast_non_dominated_sort(self):
-        self._fronts = [[]]
-        for p in self._population:
-            p.domination_count = 0
-            p.dominated_solutions = []
-            for q in self._population:
-                if _dominates(p, q):
-                    p.dominated_solutions.append(q)
-                elif _dominates(q, p):
-                    p.domination_count += 1
-            if p.domination_count == 0:
-                p.rank = 0
-                self._fronts[0].append(p)
-        i = 0
-        while len(self._fronts[i]) > 0:
-            next_front = []
-            for p in self._fronts[i]:
-                for q in p.dominated_solutions:
-                    q.domination_count -= 1
-                    if q.domination_count == 0:
-                        q.rank = i + 1
-                        next_front.append(q)
-            i += 1
-            self._fronts.append(next_front)
+        self._fronts = self._cache_fronts(self.population)
 
     def _calculate_crowding_distance(self):
         for front in self._fronts:
-            if not front:
+            for candidate in front:
+                candidate.crowding_distance = 0.0
+            if len(front) <= 2:
+                for candidate in front:
+                    candidate.crowding_distance = float("inf")
                 continue
-            for p in front:
-                p.crowding_distance = 0
-            for i in range(len(front[0].fitness)):
-                front.sort(key=lambda x: x.fitness[i])
-                front[0].crowding_distance = front[-1].crowding_distance = float('inf')
-                max_fitness = front[-1].fitness[i]
-                min_fitness = front[0].fitness[i]
-
-                if self._normalize_crowding_distance:
-                    fitness_range = max_fitness - min_fitness + 1e-10  # Avoid division by zero
-                else:
-                    fitness_range = 1  # No normalization
-
-                for j in range(1, len(front) - 1):
-                    front[j].crowding_distance += ((front[j + 1].fitness[i] - front[j - 1].fitness[i])
-                                                   / fitness_range)
-
-    def _sort_and_trim(self):
-        # Implement selection based on rank and crowding distance
-        self._population.sort(key=lambda x: (x.rank, -x.crowding_distance))
-        self._population = self._population[:self._population_size]  # Trim to population size
-
-    def _crossover_and_mutation(self, generation: int):
-        new_population = self._population[:self._elitism_count] if self._elitism_count else []
-
-        while len(new_population) < self._population_size:
-            parent1 = self._selector.select(self._population)
-            parent1_source_meta: Optional[SolutionSourceMeta] = parent1.meta.get(SOLUTION_SOURCE_META_KEY)
-            # For solution history tracking
-            parent1_history_key = SolutionHistoryKey(
-                index=parent1_source_meta.index if parent1_source_meta else self._population.index(parent1),
-                generation=generation,
-                ident=parent1_source_meta.ident if parent1_source_meta else self.ident
-            )
-
-            mutation_applied = False
-            parent2_history_key = None
-
-            if random.random() <= self._crossover_rate:
-                parent2 = self._selector.select(self._population)
-                parent2_source_meta: Optional[SolutionSourceMeta] = parent2.meta.get(SOLUTION_SOURCE_META_KEY)
-                offspring_args = self._crossover.crossover(parent1.arguments, parent2.arguments)
-                parent2_history_key = SolutionHistoryKey(
-                    index=parent2_source_meta.index if parent2_source_meta else self._population.index(parent2),
-                    generation=generation,
-                    ident=parent2_source_meta.ident if parent2_source_meta else self.ident
+            for objective in range(self._objective_count):
+                ordered = sorted(front, key=lambda c: c.fitness[objective])
+                span = ordered[-1].fitness[objective] - ordered[0].fitness[objective]
+                # Constant objectives carry no diversity information, including at boundaries.
+                if span == 0:
+                    continue
+                ordered[0].crowding_distance = ordered[-1].crowding_distance = float(
+                    "inf"
                 )
-            else:
-                offspring_args = parent1.arguments
+                scale = span if self._normalize_crowding_distance else 1.0
+                for index in range(1, len(ordered) - 1):
+                    ordered[index].crowding_distance += (
+                        ordered[index + 1].fitness[objective]
+                        - ordered[index - 1].fitness[objective]
+                    ) / scale
 
-            if random.random() <= self._mutation_rate:
-                offspring_args = self._mutator.mutate(offspring_args)
-                mutation_applied = True
-
-            self._statistics.start_time_tracking('creation')
-            offspring = NSGASolutionCandidate(offspring_args,
-                                              self._solution_creator.create_solution(offspring_args).result)
-            self._statistics.stop_time_tracking('creation')
-
-            history_item = SolutionHistoryItem(SolutionHistoryKey(index=len(new_population), generation=self.completed_generations, ident=self.ident),
-                                               mutated=mutation_applied, parent_1=parent1_history_key, parent_2=parent2_history_key)
-
-            new_population.append(offspring)
-            self._statistics.add_history_item(history_item)
-
-        del self._population
-        self._population = new_population
-
-    def perform_generation(self, generation: int):
-        self._cached_best_solution = None
+    def _prepare_population(self):
         self._fast_non_dominated_sort()
-        if self._post_non_dominated_sort_callback:
-            self._post_non_dominated_sort_callback(generation, self)
+        # After survival, retain crowding computed on union fronts for mating.
+        if any(c.crowding_distance is None for c in self.population):
+            self._calculate_crowding_distance()
+
+    def _select_survivors(self, candidates):
+        self._fronts = self._cache_fronts(candidates)
         self._calculate_crowding_distance()
-        self._sort_and_trim()
-        self._crossover_and_mutation(generation)
-
-    def best_solution(self) -> NSGASolutionCandidate:
-        # Return cached solution if available, so this is only calculated once
-        if self._cached_best_solution is not None:
-            return self._cached_best_solution
-
-        self._fast_non_dominated_sort()
-        # Sort for last generation one more time
-        if self._post_non_dominated_sort_callback:
-            self._post_non_dominated_sort_callback(self.num_generations - 1, self)
-
-        self._calculate_crowding_distance()
-
-        # When normalization enabled, take best normalized solution
-        if self._normalize_crowding_distance:
-            # Fitness range (best, worst) for each objective
-            normalization_params = [
-                (self._fronts[0][0].fitness[i], self._fronts[0][-1].fitness[i])
-                for i in range(len(self._fronts[0][0].fitness))
-            ]
-
-            # Calculate the sum of normalized fitness values for each solution in the first front
-            normalized_fitness_sums = [
-                sum(
-                    (solution.fitness[i] - min_fitness) / (max_fitness - min_fitness)
-                    if max_fitness > min_fitness else 0
-                    for i, (min_fitness, max_fitness) in enumerate(normalization_params)
-                )
-                for solution in self._fronts[0]
-            ]
-
-            # Find the solution with the highest sum of normalized fitness values
-            best_index = normalized_fitness_sums.index(max(normalized_fitness_sums))
-            self._cached_best_solution = self._fronts[0][best_index]
-        else:
-            # If not normalizing, simply take the solution with the highest sum of fitness values
-            self._cached_best_solution = max(self._fronts[0], key=lambda x: sum(x.fitness))
-
-        return self._cached_best_solution
-
-    @property
-    def fronts(self):
-        return self._fronts
+        indices = {id(candidate): index for index, candidate in enumerate(candidates)}
+        selected = []
+        for front in self._fronts:
+            remaining = self.population_size - len(selected)
+            if len(front) > remaining:
+                front = sorted(front, key=lambda c: c.crowding_distance, reverse=True)[
+                    :remaining
+                ]
+            selected.extend(indices[id(candidate)] for candidate in front)
+            if len(selected) == self.population_size:
+                break
+        return selected

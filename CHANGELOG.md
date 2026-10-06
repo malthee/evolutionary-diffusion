@@ -1,5 +1,22 @@
 # Changelog for the evolutionary package
 
+## 0.12.0 (06.10.2026)
+
+- Correct NSGA-II elitist parent/offspring survival and default normalized crowding.
+  Reject extra elitism; constant objectives contribute no crowding distance.
+- Add U-NSGA-III as the primary multi-objective notebook method, with the paper's
+  niched comparison and adjacent/shuffled tournament mating pool. Default unified
+  mating requires population size divisible by four; embedding operators retain
+  the single-child interface through two sibling events per selected pair.
+- Correct energy-direction seed forwarding on pymoo 0.6.1.6/0.6.2. Add reproducible
+  survival, validated directions and normalization reset between runs. Remove raw-sum ties.
+- Keep fronts/callbacks and survivor lineage current. Expose Pareto sets and actual
+  evaluator counts; return a normalized representative only for convenience.
+- Add notebook variant selection, JSON export and guards for fewer objectives.
+  Keep fixed energy directions independently configurable from population size.
+  See [the configuration guide](docs/nsga.md). Validate with
+  deterministic and mocked tests; no optimization experiments run.
+
 ## 0.11.0 (06.10.2026)
 
 - Add optional bounded offspring selection, whole-run evaluation limits, fixed-weight

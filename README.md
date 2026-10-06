@@ -16,7 +16,7 @@
 |--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Genetic Algorithm        | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/ga_notebook.ipynb)               |
 | Island Genetic Algorithm | [![Island Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/island_ga_notebook.ipynb) |
-| NSGA                     | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/nsga_notebook.ipynb)             |
+| U-NSGA-III               | [![Genetic Algorithm](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/malthee/evolutionary-diffusion/blob/main/notebooks/nsga_notebook.ipynb)             |
 
 Image results will be saved in your Google Drive in the folder `evolutionary`. Each generation
 creates a new folder where the images will be saved in. You can change the folders in the notebook.
