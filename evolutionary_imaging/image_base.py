@@ -1,5 +1,5 @@
 from abc import abstractmethod, ABC
-from typing import List, Any
+from typing import List, Any, Optional, Sequence
 from PIL import Image
 from diffusers import DiffusionPipeline
 from evolutionary.evolution_base import SolutionCreator, SolutionCandidate, A
@@ -24,7 +24,7 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
                  model_id: str,
                  inference_steps: int,
                  batch_size: int,
-                 deterministic: bool = True):
+                 deterministic: bool = True, *, fixed_noise_seeds: Optional[Sequence[int]] = None):
         """
         :param model_id: The model ID to use for image generation. This has to be compatible with the ImageCreator.
         This model is then loaded through the diffusers DiffusionPipeline.
@@ -33,7 +33,14 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
         evolution across multiple images.
         :param deterministic: Whether to use a deterministic seed for the diffusion process, recommended for
         evolutionary exploration.
+        :param fixed_noise_seeds: One seed per generated image. When provided, fresh generators
+        reproduce diffusion noise for each candidate and retry without resetting variation RNGs.
         """
+        if fixed_noise_seeds is not None:
+            if len(fixed_noise_seeds) != batch_size or any(isinstance(seed, bool) or not isinstance(seed, int)
+                    or not 0 <= seed < 2**64 for seed in fixed_noise_seeds):
+                raise ValueError("fixed_noise_seeds must contain one unsigned 64-bit integer per image")
+        self._fixed_noise_seeds = tuple(fixed_noise_seeds) if fixed_noise_seeds is not None else None
         self._model_id = model_id
         self._pipeline = self._setup_diffusers_pipeline()
         self._inference_steps = inference_steps
@@ -41,6 +48,13 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
         self._deterministic = deterministic
         self._generators = [torch.Generator(device=self._pipeline.device).manual_seed(i)
                             for i in range(batch_size)] if deterministic else None
+
+    def _generation_generators(self):
+        """Fresh streams give candidates and retries identical diffusion noise."""
+        seeds = getattr(self, '_fixed_noise_seeds', None)
+        if seeds is None:
+            return self._generators
+        return [torch.Generator(device=self._pipeline.device).manual_seed(seed) for seed in seeds]
 
     def __getstate__(self):
         # Exclude the pipeline, generators from pickling

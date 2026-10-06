@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Literal
+from typing import Any, Literal, Optional, Sequence
 
 from evolutionary_prompt_embedding.argument_types import PooledPromptEmbedData, PromptEmbedData
 from evolutionary.evolution_base import SolutionCandidate
@@ -26,12 +26,12 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                  inference_steps: int,
                  batch_size: int,
                  deterministic: bool = True,
-                 model_id: Literal["stabilityai/sdxl-turbo"] = "stabilityai/sdxl-turbo"):
+                 model_id: Literal["stabilityai/sdxl-turbo"] = "stabilityai/sdxl-turbo", *, fixed_noise_seeds: Optional[Sequence[int]] = None):
         """
         Initializes the ImageCreator with the given parameters.
         By default, uses the "stabilityai/sdxl-turbo" model, other SDXL variants should work as well.
         """
-        super().__init__(model_id, inference_steps, batch_size, deterministic)
+        super().__init__(model_id, inference_steps, batch_size, deterministic, fixed_noise_seeds=fixed_noise_seeds)
 
     def create_solution(self, argument: PooledPromptEmbedData) \
             -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData, Any]:
@@ -45,7 +45,7 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
-                generator=self._generators,
+                generator=self._generation_generators(),
             ).images
         except Exception as e:
             # This most likely happens because an out of memory error, so we reinitialize the pipeline and retry
@@ -57,7 +57,7 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
-                generator=self._generators,
+                generator=self._generation_generators(),
             ).images
 
         return SolutionCandidate(argument, ImageSolutionData(images))
@@ -128,12 +128,12 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
                  inference_steps: int,
                  batch_size: int,
                  deterministic: bool = True,
-                 model_id: Literal["stabilityai/sd-turbo"] = "stabilityai/sd-turbo"):
+                 model_id: Literal["stabilityai/sd-turbo"] = "stabilityai/sd-turbo", *, fixed_noise_seeds: Optional[Sequence[int]] = None):
         """
         Initializes the ImageCreator with the given parameters.
         By default, uses the "stabilityai/sd-turbo" model, other SD variants should work as well.
         """
-        super().__init__(model_id, inference_steps, batch_size, deterministic)
+        super().__init__(model_id, inference_steps, batch_size, deterministic, fixed_noise_seeds=fixed_noise_seeds)
 
     def create_solution(self, argument: PromptEmbedData) -> SolutionCandidate[PromptEmbedData, ImageSolutionData, Any]:
         prompt_embeds = argument.prompt_embeds
@@ -144,7 +144,7 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
-                generator=self._generators,
+                generator=self._generation_generators(),
             ).images
         except Exception as e:
             # This most likely happens because an out of memory error, so we reinitialize the pipeline and retry
@@ -155,7 +155,7 @@ class SDPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PromptEmbedData]
                 num_inference_steps=self._inference_steps,
                 num_images_per_prompt=self._batch_size,
                 guidance_scale=0.0 if 'turbo' in self._model_id else None,  # 0 for Turbo models
-                generator=self._generators,
+                generator=self._generation_generators(),
             ).images
 
         return SolutionCandidate(argument, ImageSolutionData(images))

@@ -122,6 +122,10 @@ class IslandModel(Generic[A, R, Fitness]):
         Executes the generations of the islands and migration between them.
         Returns the best solutions from each island.
         """
+        # This orchestrator has no protocol for an island stopping mid-generation.
+        if any(getattr(island, 'offspring_selection', None) is not None or
+               getattr(island, 'max_evaluations', None) is not None for island in self._islands):
+            raise ValueError('OSGA and evaluation limits currently require standalone GeneticAlgorithm.run()')
         self._completed_generations = 0
 
         for island in self._islands:

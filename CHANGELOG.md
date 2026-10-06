@@ -1,4 +1,22 @@
 # Changelog for the evolutionary package
+
+## 0.11.0 (06.10.2026)
+
+- Add optional bounded offspring selection, whole-run evaluation limits, fixed-weight
+  variation pools, complete scalar evaluation records and survivor/elite lineage.
+- Change `strict_osga=True` to strictly improve on the better parent with bounded
+  retries; reject simultaneous explicit offspring-selection configuration.
+- Add discrete/continuous prompt and pooled operators, fix spherical mutation for
+  arbitrary leading dimensions and nonunit norms, handle SLERP degeneracies and
+  preserve bounds through float16 conversion. Correct uniform swap-rate endpoints.
+- Normalize NumPy fitness for accurate success summaries and JSON export.
+- Add the OSGA notebook and consistent checkout installation, model-first seeding,
+  fixed diffusion noise and completed-generation analysis to evolutionary notebooks.
+  Both standalone GA notebooks export configuration, costs, lineage and source
+  provenance as JSON alongside pickle. See [the feature guide](docs/osga.md).
+- Add deterministic operator/OSGA regressions and mocked notebook/diffusion checks;
+  no optimization experiments run.
+
 ## 0.10.1 (05.05.2026)
 * Add SSP and DIRE AI detection evaluators and variants:
   * SSP (`SSPAIDetectionImageEvaluator`)
