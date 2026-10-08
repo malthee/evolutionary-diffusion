@@ -24,7 +24,7 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
                  model_id: str,
                  inference_steps: int,
                  batch_size: int,
-                 deterministic: bool = True, *, fixed_noise_seeds: Optional[Sequence[int]] = None):
+                 deterministic: bool = True, *, fixed_noise_seeds: Optional[Sequence[int]] = None, pipeline=None):
         """
         :param model_id: The model ID to use for image generation. This has to be compatible with the ImageCreator.
         This model is then loaded through the diffusers DiffusionPipeline.
@@ -42,7 +42,7 @@ class ImageCreator(SolutionCreator[A, ImageSolutionData], ABC):
                 raise ValueError("fixed_noise_seeds must contain one unsigned 64-bit integer per image")
         self._fixed_noise_seeds = tuple(fixed_noise_seeds) if fixed_noise_seeds is not None else None
         self._model_id = model_id
-        self._pipeline = self._setup_diffusers_pipeline()
+        self._pipeline = pipeline if pipeline is not None else self._setup_diffusers_pipeline()
         self._inference_steps = inference_steps
         self._batch_size = batch_size
         self._deterministic = deterministic

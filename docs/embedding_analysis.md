@@ -2,7 +2,7 @@
 
 Experiments record original embeddings once. Visualization, dimensionality
 reduction and viewer-specific conversion run later in
-[`../embedding_analysis.ipynb`](../embedding_analysis.ipynb).
+[`../notebooks/embedding_analysis.ipynb`](../notebooks/embedding_analysis.ipynb).
 
 ## Run an experiment
 
@@ -106,7 +106,7 @@ Run from the repository root with Python 3.13 and `uv`:
 
 ```bash
 uv venv .venv-analysis --python 3.13
-uv pip sync --python .venv-analysis/bin/python notebooks/embedding_analysis/requirements.lock
+uv pip sync --python .venv-analysis/bin/python environments/analysis/requirements.lock
 uv pip install --python .venv-analysis/bin/python --no-deps -e .
 .venv-analysis/bin/python -m jupyterlab notebooks/embedding_analysis.ipynb
 ```
@@ -116,7 +116,7 @@ markers; it is separate from the inference environment and its Torch/Transformer
 pins. Regenerate it after deliberately changing `requirements.in`:
 
 ```bash
-uv pip compile notebooks/embedding_analysis/requirements.in --python-version 3.13 --universal --output-file notebooks/embedding_analysis/requirements.lock
+uv pip compile environments/analysis/requirements.in --python-version 3.13 --universal --output-file environments/analysis/requirements.lock
 ```
 
 Copy the complete experiment run directory from Colab/Drive to the local machine,

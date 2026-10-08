@@ -1,0 +1,13 @@
+{
+  "dataset": "DiffusionDB 2M",
+  "count": 1528510,
+  "source_sha256": "7bd1d4afaaaee5bead3e753cabdc27cfb7ac3fc7053cae9c6ff22c26334f3b53",
+  "model_id": "stabilityai/sdxl-turbo",
+  "model_revision": "71153311d3dbb46851df1931d3ca6e939de83304",
+  "encoding_device": "CUDA",
+  "encoding_dtype": "float16",
+  "extrema_dtype": "float32",
+  "sha256": "301f5b3d453a035a6731ef7cf4c8c73511d22d95d02d294fdfc61e7e1e247cd2",
+  "bytes": 1272120,
+  "initialization": "per-coordinate uniform synthetic embeddings; not actual prompt samples"
+}

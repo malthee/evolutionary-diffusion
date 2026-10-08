@@ -1,0 +1,47 @@
+{
+  "experiment": {
+    "algorithm": "ga",
+    "objective": "maximize",
+    "population_size": 64,
+    "num_generations": 100,
+    "max_evaluations": 6400,
+    "candidate_batch_size": 4,
+    "seed": null,
+    "diffusion_seed": 0,
+    "model_id": "stabilityai/sdxl-turbo",
+    "model_revision": "71153311d3dbb46851df1931d3ca6e939de83304",
+    "inference_steps": 1,
+    "success_ratio": 0.6,
+    "comparison_factor": 1.0,
+    "max_selection_pressure": 10.0
+  },
+  "deployment": {
+    "output_root": ".local/runs",
+    "bounds_source": "diffusiondb",
+    "bounds_file": null,
+    "cache_dir": "~/.cache/evolutionary",
+    "device": "cuda",
+    "minimum_free_gib": 20,
+    "hard_floor_gib": 8
+  },
+  "campaign": {
+    "runs": 3,
+    "seeds": null,
+    "initial_budget_seconds": 3600
+  },
+  "execution": {
+    "enabled": false,
+    "jupyter_url": "http://127.0.0.1:8888",
+    "kernel_name": "evolutionary-experiments",
+    "jupyter_root": null,
+    "notebook": "notebooks/prompt_embedding_experiment.ipynb",
+    "runner_count": 1,
+    "warm_runners": true
+  },
+  "drive": {
+    "enabled": false,
+    "credentials": null,
+    "folder_id": null,
+    "delete_after_verification": false
+  }
+}

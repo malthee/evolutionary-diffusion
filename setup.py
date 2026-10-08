@@ -32,8 +32,15 @@ extras_require = {
     'prompt_embedding': torch_diffusers_requirements + ['safetensors>=0.7,<1'],
     'prompt_embedding_utils': [
         'datasets~=4.8.4',
-    ] + torch_diffusers_requirements,
+    ]
+    + torch_diffusers_requirements,
     'sound': sound_requirements,
+    'execution': [
+        'aiohttp>=3.13,<4',
+        'nbformat>=5.10,<6',
+        'nbclient>=0.10,<0.11',
+        'ipykernel>=6.30,<8',
+    ],
 }
 
 all_deps = set(dep for deps in extras_require.values() for dep in deps)
@@ -41,13 +48,13 @@ extras_require['all'] = sorted(all_deps)
 
 setup(
     name='evolutionary',
-    version='0.13.0',
+    version='0.14.0',
     author='malthee',
     url='https://github.com/malthee/evolutionary-diffusion',
-    description='''Base package defining a framework for evolutionary algorithms to be used with generative networks.
-                   Splits up the Solution-Representation into arguments and results.''',
+    description="""Base package defining a framework for evolutionary algorithms to be used with generative networks.
+                   Splits up the Solution-Representation into arguments and results.""",
     long_description_content_type='text/markdown',
-    long_description='''This package includes generic classes for evolutionary computation in a generational environment.
+    long_description="""This package includes generic classes for evolutionary computation in a generational environment.
                      Crossover and Mutation happens on the argument (A) level, whilst the fitness is evaluated on the result (R) level.
                      SolutionCandidates are created by a SolutionCreator, their representation is split into arguments (A) and result (R).
 
@@ -62,9 +69,25 @@ setup(
                      embeddings are persisted independently for offline analysis. To be used with `imaging` or `sound` subpackages.
                      * prompt_embedding_utils (evolutionary_prompt_embedding.utils): Additional utilities for evaluating
                      the prompt embedding range.
+                     * execution (evolutionary_extensions.execution): Optional Jupyter campaign execution.
                      * sound (evolutionary_sound): Adding evaluators for sound solutions.
-                     ''',
-    packages=find_packages(),
+                     """,
+    packages=find_packages(
+        include=[
+            'evolutionary',
+            'evolutionary.*',
+            'evolutionary_imaging',
+            'evolutionary_imaging.*',
+            'evolutionary_model_helpers',
+            'evolutionary_model_helpers.*',
+            'evolutionary_prompt_embedding',
+            'evolutionary_prompt_embedding.*',
+            'evolutionary_sound',
+            'evolutionary_sound.*',
+            'evolutionary_extensions',
+            'evolutionary_extensions.*',
+        ]
+    ),
     install_requires=[
         'tqdm>=4.67.3',  # For visualizing progress of algorithms
         'matplotlib>=3.10.8',

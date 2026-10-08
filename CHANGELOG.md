@@ -1,5 +1,34 @@
 # Changelog for the evolutionary package
 
+## 0.14.0 (08.10.2026)
+
+- Add reusable GA/OSGA prompt-embedding experiments with pinned SDXL-Turbo inputs,
+  verified DiffusionDB coordinate bounds, configurable initialization/operator pools,
+  and preflight precision checks. Keep CUDA execution explicitly disabled in examples.
+- Add ordered, opt-in candidate batching with scalar fallbacks, fixed per-candidate
+  diffusion noise, FP32 aesthetic scoring and device/checkpoint-specific model caches.
+  Preserve evaluation budgets, variation order and lineage; batch shape is part of
+  the numerical recipe.
+- Add opt-in exact parent reuse and buffered attempt recording. Preserve original
+  evaluation identities, count cached proposals toward selection pressure, and retain
+  rejected and unfinished attempts separately from completed survivor snapshots.
+- Add provider-independent managed Jupyter campaigns, recipe adapters, bounded
+  finalization, resolved seeds and paired selection controls. Support explicit
+  inference/finalization deadlines and recorded admission skips without cancelling
+  sibling trials. Campaign execution requires Python 3.11 or newer.
+- Add immutable ZIP64 packaging and optional resumable Google Drive persistence
+  with remote checksum/download verification before explicitly requested deletion.
+  Failed or unverified transfers retain local evidence; optimization resume is not added.
+- Separate Azure kernel preparation from compute lifecycle operations. Preserve
+  selected bounds and scientific settings, configure host paths explicitly, and keep
+  resource identities, credentials, measured host tuning and one-off operations outside Git.
+- Add the optional `execution` dependency extra and explicit release package boundaries.
+  Publish disabled examples under `configs/examples/` and centralize public documentation
+  under `docs/`; private configurations, generated outputs and handovers belong in `.local/`.
+- Migration: move the offline analysis guide to `docs/embedding_analysis.md` and its
+  unchanged locked dependencies to `environments/analysis/`. See
+  [repository architecture](docs/architecture.md) and [campaign configuration](docs/configuration.md).
+
 ## 0.13.0 (06.10.2026)
 
 - BREAKING: Replace `TensorboardEmbedVisualizer` and its TensorFlow/TensorBoard dependencies with viewer-independent embedding archives. Experiment notebooks now use independent `save_embeddings` and `save_images` flags, both enabled by default.

@@ -103,11 +103,13 @@ class EmbeddingArchiveWriter:
                 },
             )
 
-    def check_snapshot_available(self, generation, island_id=None):
+    def check_snapshot_available(self, generation, island_id=None, *, snapshot_id=None):
         """Preflight before saving accompanying images to avoid overwriting them."""
         manifest = EmbeddingArchiveReader(self.run_dir).manifest
         if any(
-            s["generation"] == generation and s["island_id"] == island_id
+            s["generation"] == generation
+            and s["island_id"] == island_id
+            and s.get("snapshot_id") == snapshot_id
             for s in manifest["snapshots"]
         ):
             raise ValueError(
@@ -115,7 +117,14 @@ class EmbeddingArchiveWriter:
             )
 
     def write_generation(
-        self, population, generation, island_id=None, image_paths=None, metadata=None
+        self,
+        population,
+        generation,
+        island_id=None,
+        image_paths=None,
+        metadata=None,
+        *,
+        snapshot_id=None,
     ):
         """Persist a snapshot; optional metadata is one JSON mapping per candidate.
 
@@ -140,11 +149,21 @@ class EmbeddingArchiveWriter:
             raise ValueError("Images/metadata must have one entry per candidate")
         manifest = EmbeddingArchiveReader(self.run_dir).manifest
         if any(
-            s["generation"] == generation and s["island_id"] == island_id
+            s["generation"] == generation
+            and s["island_id"] == island_id
+            and s.get("snapshot_id") == snapshot_id
             for s in manifest["snapshots"]
         ):
             raise ValueError(
                 f"Duplicate snapshot: generation={generation}, island={island_id}"
+            )
+        if snapshot_id is not None and (
+            not isinstance(snapshot_id, str)
+            or not snapshot_id
+            or len(snapshot_id) > 128
+        ):
+            raise ValueError(
+                "snapshot_id must be a nonempty string of at most 128 characters"
             )
         records = []
         spec = None
@@ -179,7 +198,8 @@ class EmbeddingArchiveWriter:
                         "Images must reside inside the run directory"
                     ) from exc
             record = {
-                "record_id": f"{manifest['run_id']}:{island_id}:{generation}:{index}",
+                "record_id": f"{manifest['run_id']}:{island_id}:{generation}:{index}"
+                + (f":{snapshot_id}" if snapshot_id is not None else ""),
                 "run_id": manifest["run_id"],
                 "generation": generation,
                 "candidate_slot": index,
@@ -201,6 +221,8 @@ class EmbeddingArchiveWriter:
             "committed_count": 0,
             "status": "writing",
         }
+        if snapshot_id is not None:
+            snapshot["snapshot_id"] = snapshot_id
         manifest["snapshots"].append(snapshot)
         _atomic_json(self.manifest_path, manifest)
         folder = self.run_dir / "embeddings"

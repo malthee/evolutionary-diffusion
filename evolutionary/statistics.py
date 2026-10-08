@@ -30,6 +30,7 @@ class EvaluationRecord:
     threshold: Optional[float] = None
     successful: Optional[bool] = None
     survivor_key: Optional[SolutionHistoryKey] = None
+    reused: bool = False
 
 
 @dataclass
@@ -47,6 +48,8 @@ class GenerationSummary:
     creation_seconds: float = 0.0
     evaluation_seconds: float = 0.0
     displaced_evaluation_ids: Tuple[int, ...] = ()
+    cached_attempts: int = 0
+    proposed_attempts: int = 0
 
 
 class StatisticsTracker(Generic[Fitness]):
@@ -64,6 +67,7 @@ class StatisticsTracker(Generic[Fitness]):
         self._post_evaluation_time: TimeList = []
         self._time_trackers = {}
         self.evaluation_records: List[EvaluationRecord] = []
+        self.reused_offspring_records: list[EvaluationRecord] = []
         self.generation_summaries: List[GenerationSummary] = []
         self._solution_history: Dict[SolutionHistoryKey, SolutionHistoryItem] = {}
 

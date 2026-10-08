@@ -29,6 +29,11 @@ class Evaluator(Generic[R_contravariant, Fitness], ABC):
         pass
 
 
+    def evaluate_batch(self, results: Sequence[R_contravariant]) -> List[Fitness]:
+        """Evaluate ordered independent results; override for vectorized inference."""
+        return [self.evaluate(result) for result in results]
+
+
 class SingleObjectiveEvaluator(Evaluator[R_contravariant, SingleObjectiveFitness], ABC):
     @abstractmethod
     def evaluate(self, result: R_contravariant) -> SingleObjectiveFitness:
@@ -67,6 +72,11 @@ class SolutionCreator(Generic[A, R], ABC):
     @abstractmethod
     def create_solution(self, argument: A) -> SolutionCandidate[A, R, Any]:
         pass
+
+
+    def create_solutions(self, arguments: Sequence[A]) -> List[SolutionCandidate[A, R, Any]]:
+        """Create one solution per argument, preserving order."""
+        return [self.create_solution(argument) for argument in arguments]
 
 
 class Selector(Generic[Fitness], ABC):

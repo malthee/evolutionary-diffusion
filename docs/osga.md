@@ -38,7 +38,17 @@ mutator. The mutator's coordinate/row participation controls how much of the
 embedding it changes after that event is chosen. These are separate probabilities.
 
 OSGA requests a fresh evaluation for every newly constructed child, even if a
-creator supplied precomputed fitness. Population evaluation and elite carryover
+creator supplied precomputed fitness. Opt-in `reuse_unchanged_offspring=True`
+reuses a selected parent's result and fitness when `arguments_equal(child, parent)`
+proves exact equality (identity by default). Only use it with deterministic
+creation/evaluation and non-mutating variation. Reused proposals consume no fresh
+evaluation budget and bypass creation/scoring. They retain the source evaluation
+ID with independent candidate metadata and detached classification records in
+`statistics.reused_offspring_records`. Strict threshold comparisons still apply.
+They count toward the proposal/pressure cap, preventing endless free retries;
+generation summaries distinguish `attempts` (fresh), `cached_attempts` and
+`proposed_attempts`. Fresh-evaluation callbacks exclude reused proposals.
+Population evaluation and elite carryover
 reuse cached fitness; ordinary GA retains its cache behavior.
 
 `strict_osga=True` now maps to `OffspringSelectionConfig(1.0, 1.0, 10.0)`.
@@ -69,7 +79,8 @@ slots from unsuccessful children without replacement. Ratio zero still construct
 population's elites by replacing the worst selected children. This ordering means
 successful children can be displaced and final survivors need not meet the quota.
 
-Selection pressure is evaluated offspring attempts divided by `N`. If pressure or
+Selection pressure is evaluated offspring attempts divided by `N`; with exact
+parent reuse enabled it includes cached proposals to bound free retries. If pressure or
 the whole-run evaluation cap prevents a complete offspring population meeting the
 quota, the run stops without relaxing the quota or committing a partial generation.
 `termination_reason` is `max_selection_pressure`, `max_evaluations`, or
@@ -210,3 +221,11 @@ Run the unit and mocked integration suite with `python -m pytest tests` in a tes
 environment containing the project's dependencies plus pytest, nbformat and IPython.
 Notebook tests construct configuration with mocked models and exercise JSON export;
 they never execute optimization or analysis cells.
+
+## Batched CUDA experiments
+
+For reusable DiffusionDB initialization, ordered opt-in batching and complete
+accepted/rejected-attempt archives, see [the experiment workflow](configuration.md).
+`candidate_batch_size` defaults to 1. `post_evaluation_batch_callback` receives
+`(generation, candidates, evaluation_records, algorithm)` after classification;
+completed survivor snapshots continue through `post_evaluation_callback`.

@@ -37,6 +37,19 @@ pip install -e ".[all]"
 The dependency set is validated on Python 3.12 and 3.13.
 Now you are ready to go with the notebooks or custom code. CUDA and MPS are supported.
 
+## Experiment and cloud workflows
+
+The reusable [prompt-embedding notebook](notebooks/prompt_embedding_experiment.ipynb)
+uses disabled [GA](configs/examples/ga.json)/[OSGA](configs/examples/osga.json)
+examples. Install `.[imaging,prompt_embedding,execution]` for managed Jupyter campaigns
+with Python 3.11 or newer. Keep actual campaign settings and outputs under ignored
+`.local/` or outside the checkout.
+
+See [repository architecture](docs/architecture.md),
+[campaign configuration](docs/configuration.md), [Azure host preparation](docs/azure.md),
+[scientific artifacts](docs/experiment_artifacts.md) and
+[offline embedding analysis](docs/embedding_analysis.md).
+
 ## Example - Creating the most Aesthetic Image
 
 ### Optimizing for Aesthetics using the Aesthetics Predictor V2 from LAION with a GA and SDXL-Turbo
@@ -120,7 +133,7 @@ These notebooks also allow for simple inference so that any model can be tried o
 * aesthetics_evaluator: uses a pre-trained model from the maintainers of the LAION image dataset, which scores an image 0-10 depending on how "aesthetic" it is. Could be used as a maximization criteria for the fitness of images.
 * clamp_range: testing the usual prompt-embedding min and max values for different models, so that a CLAMP range can be set in the mutator for example. [Using the parti prompts.](https://github.com/rromb/parti-prompts)
 * crossover_mutation_experiments: testing different crossover and mutation strategies to see how they work in the prompt embedding space
-* embedding_relations: experimenting with TensorBoard and integrating it into our embedding model
+* embedding_relations: recording embeddings for offline analysis
 
 ### Secured auto-download of models and TLS certificates
 Sadly many of these models are hosted somewhere without a proper versioning and release system.  

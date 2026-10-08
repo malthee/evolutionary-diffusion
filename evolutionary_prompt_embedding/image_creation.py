@@ -26,12 +26,12 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
                  inference_steps: int,
                  batch_size: int,
                  deterministic: bool = True,
-                 model_id: Literal["stabilityai/sdxl-turbo"] = "stabilityai/sdxl-turbo", *, fixed_noise_seeds: Optional[Sequence[int]] = None):
+                 model_id: Literal["stabilityai/sdxl-turbo"] = "stabilityai/sdxl-turbo", *, fixed_noise_seeds: Optional[Sequence[int]] = None, pipeline=None):
         """
         Initializes the ImageCreator with the given parameters.
         By default, uses the "stabilityai/sdxl-turbo" model, other SDXL variants should work as well.
         """
-        super().__init__(model_id, inference_steps, batch_size, deterministic, fixed_noise_seeds=fixed_noise_seeds)
+        super().__init__(model_id, inference_steps, batch_size, deterministic, fixed_noise_seeds=fixed_noise_seeds, pipeline=pipeline)
 
     def create_solution(self, argument: PooledPromptEmbedData) \
             -> SolutionCandidate[PooledPromptEmbedData, ImageSolutionData, Any]:
@@ -61,6 +61,26 @@ class SDXLPromptEmbeddingImageCreator(PromptEmbeddingImageCreator[PooledPromptEm
             ).images
 
         return SolutionCandidate(argument, ImageSolutionData(images))
+
+    @torch.inference_mode()
+    def create_solutions(self, arguments):
+        if not arguments:
+            return []
+        if self._batch_size != 1 or self._fixed_noise_seeds is None:
+            raise ValueError("Candidate batching requires one image per candidate and fixed_noise_seeds")
+        if any(tuple(a.prompt_embeds.shape) != (1, 77, 2048) or tuple(a.pooled_prompt_embeds.shape) != (1, 1280) for a in arguments):
+            raise ValueError("Expected one SDXL token/pooled embedding per candidate")
+        device = self._pipeline.device
+        images = self._pipeline(
+            prompt_embeds=torch.cat([a.prompt_embeds for a in arguments]).to(device, dtype=torch.float16),
+            pooled_prompt_embeds=torch.cat([a.pooled_prompt_embeds for a in arguments]).to(device, dtype=torch.float16),
+            num_images_per_prompt=1, num_inference_steps=self._inference_steps,
+            guidance_scale=0.0, width=512, height=512,
+            generator=[torch.Generator(device=device).manual_seed(self._fixed_noise_seeds[0]) for _ in arguments],
+        ).images
+        if len(images) != len(arguments):
+            raise ValueError("Pipeline must return one image per candidate")
+        return [SolutionCandidate(a, ImageSolutionData([image])) for a, image in zip(arguments, images)]
 
     @torch.no_grad()
     def arguments_from_prompt(self, prompt: str) -> PooledPromptEmbedData:
