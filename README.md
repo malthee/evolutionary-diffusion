@@ -49,6 +49,8 @@ See [repository architecture](docs/architecture.md),
 [campaign configuration](docs/configuration.md), [Azure host preparation](docs/azure.md),
 [scientific artifacts](docs/experiment_artifacts.md) and
 [offline embedding analysis](docs/embedding_analysis.md).
+The [embedding bounds study](docs/embedding_bounds.md) documents the measured
+DiffusionDB/Parti comparison and its limits.
 
 ## Example - Creating the most Aesthetic Image
 

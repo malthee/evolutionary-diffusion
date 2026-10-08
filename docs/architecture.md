@@ -36,6 +36,7 @@ remain ignored for older notebook workflows.
 
 ## Documentation map
 
+- [Embedding bounds study](embedding_bounds.md): DiffusionDB/Parti results, dataset tables and interpretation.
 - [Campaign configuration](configuration.md): portable setup and recipe controls.
 - [Azure host preparation](azure.md): selected interpreter, paths and kernel.
 - [Scientific artifacts](experiment_artifacts.md): precision, recording and persistence.

@@ -52,6 +52,9 @@ The examples use population 64, at most 100 populations including initialization
 LAION improved aesthetics V2 scoring. Diffusion noise has its own seed. Synthetic
 uniform initialization uses the packaged full-corpus DiffusionDB bounds; an
 external `bounds_file` or `bounds_source: "parti"` can select another input.
+For measured differences against Parti Prompts, equal-count comparisons and
+initialization-image results, see [the bounds study](embedding_bounds.md).
+
 Initialization, rejected offspring and unfinished attempts count against the
 budget; cached elites do not. Raw scores are retained; minimizing negates fitness.
 
