@@ -1,5 +1,6 @@
 import math
 import random
+from copy import copy
 from dataclasses import dataclass, replace
 from time import perf_counter
 from typing import List, Optional
@@ -72,6 +73,10 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
         *,
         offspring_selection: Optional[OffspringSelectionConfig] = None,
         max_evaluations: Optional[int] = None,
+        candidate_batch_size: int = 1,
+        post_evaluation_batch_callback=None,
+        reuse_unchanged_offspring: bool = False,
+        arguments_equal=None,
     ):
         super().__init__(
             num_generations,
@@ -110,6 +115,20 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             raise ValueError(
                 "max_evaluations must be an integer sufficient for the initial population"
             )
+        if (
+            isinstance(candidate_batch_size, bool)
+            or not isinstance(candidate_batch_size, int)
+            or candidate_batch_size < 1
+        ):
+            raise ValueError("candidate_batch_size must be a positive integer")
+        if not isinstance(reuse_unchanged_offspring, bool):
+            raise TypeError("reuse_unchanged_offspring must be boolean")
+        if arguments_equal is not None and not callable(arguments_equal):
+            raise TypeError("arguments_equal must be callable or None")
+        self.reuse_unchanged_offspring = reuse_unchanged_offspring
+        self._arguments_equal = arguments_equal or (lambda a, b: a is b)
+        self.candidate_batch_size = candidate_batch_size
+        self._post_evaluation_batch_callback = post_evaluation_batch_callback
         self._selector, self._mutator, self._crossover = selector, mutator, crossover
         self._mutation_rate, self._crossover_rate = mutation_rate, crossover_rate
         self.elitism_count = elitism_count
@@ -137,14 +156,21 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
         mutation=None,
         *,
         fresh=False,
+        precomputed_fitness=None,
     ):
-        if candidate.fitness is not None and not fresh:
+        reused = kind == "offspring" and getattr(candidate, "_reused_parent", False)
+        if candidate.fitness is not None and not fresh and not reused:
             candidate.fitness = float(candidate.fitness)
             return None  # Cached fitness, notably elite carryover, costs no evaluation.
-        if not self._has_budget():
-            raise RuntimeError("Evaluation budget exhausted")
-        candidate.fitness = float(self._evaluator.evaluate(candidate.result))
-        self.evaluation_count += 1
+        if not reused:
+            if not self._has_budget():
+                raise RuntimeError("Evaluation budget exhausted")
+            candidate.fitness = float(
+                self._evaluator.evaluate(candidate.result)
+                if precomputed_fitness is None
+                else precomputed_fitness
+            )
+            self.evaluation_count += 1
         fitness = float(candidate.fitness)
         if not math.isfinite(fitness):
             raise ValueError("GA fitness must be finite")
@@ -153,7 +179,7 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             config.threshold([fitness for _, fitness in parents]) if config else None
         )
         record = EvaluationRecord(
-            self.evaluation_count,
+            candidate._source_evaluation_id if reused else self.evaluation_count,
             generation,
             self.ident,
             kind,
@@ -165,8 +191,12 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             float(config.comparison_factor) if config else None,
             threshold,
             fitness > threshold if config else None,
+            reused=reused,
         )
-        self.statistics.evaluation_records.append(record)
+        if reused:
+            self.statistics.reused_offspring_records.append(record)
+        else:
+            self.statistics.evaluation_records.append(record)
         if (
             self._best_evaluated is None
             or candidate.fitness > self._best_evaluated.fitness
@@ -174,11 +204,83 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             self._best_evaluated = candidate
         return record
 
+    def _create_many(self, arguments):
+        create = getattr(self._solution_creator, "create_solutions", None)
+        candidates = (
+            list(create(arguments))
+            if create
+            else [self._solution_creator.create_solution(a) for a in arguments]
+        )
+        if len(candidates) != len(arguments):
+            raise ValueError("Creator must return one candidate per argument")
+        return candidates
+
+    def _evaluate_many(
+        self, candidates, generation, kind, metadata=None, *, fresh=False
+    ):
+        metadata = metadata or [((), None, None) for _ in candidates]
+        pending = [
+            i
+            for i, candidate in enumerate(candidates)
+            if candidate.fitness is None
+            or (fresh and not getattr(candidate, "_reused_parent", False))
+        ]
+        scores = {}
+        if pending:
+            results = [candidates[i].result for i in pending]
+            evaluate = getattr(self._evaluator, "evaluate_batch", None)
+            values = (
+                list(evaluate(results))
+                if evaluate
+                else [self._evaluator.evaluate(r) for r in results]
+            )
+            if len(values) != len(pending) or not all(
+                math.isfinite(float(v)) for v in values
+            ):
+                raise ValueError("Evaluator must return one finite score per candidate")
+            scores = dict(zip(pending, values))
+        records = [
+            self._evaluate(
+                c, generation, kind, *m, fresh=fresh, precomputed_fitness=scores.get(i)
+            )
+            for i, (c, m) in enumerate(zip(candidates, metadata))
+        ]
+        return records
+
+    def _notify_batch(self, generation, candidates, records):
+        evaluated = [
+            (c, r)
+            for c, r in zip(candidates, records)
+            if r is not None and not r.reused
+        ]
+        if evaluated and self._post_evaluation_batch_callback:
+            self._post_evaluation_batch_callback(
+                generation, [c for c, _ in evaluated], [r for _, r in evaluated], self
+            )
+
     def create_initial_population(self):
         self.evaluation_count = 0
         self.termination_reason = None
         self._best_evaluated = None
-        super().create_initial_population()
+        if self.candidate_batch_size == 1:
+            super().create_initial_population()
+        else:
+            start = perf_counter()
+            self._population = []
+            for offset in range(0, self.population_size, self.candidate_batch_size):
+                args = [
+                    self._initial_arguments[i % len(self._initial_arguments)]
+                    for i in range(
+                        offset,
+                        min(offset + self.candidate_batch_size, self.population_size),
+                    )
+                ]
+                self._population.extend(self._create_many(args))
+            for index in range(self.population_size):
+                self.statistics.add_history_item(
+                    SolutionHistoryItem(SolutionHistoryKey(index, 0, self.ident), False)
+                )
+            self.statistics._custom_time_tracking("creation", perf_counter() - start)
         for key, item in list(self.statistics.solution_history.items()):
             self.statistics.solution_history[key] = replace(
                 item, creation_kind="initial"
@@ -188,21 +290,30 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
         # Offspring were evaluated during construction. Initialization is evaluated here.
         start = perf_counter()
         initial_records = []
-        for index, candidate in enumerate(self.population):
-            record = self._evaluate(candidate, generation, "initial")
-            if record:
-                key = SolutionHistoryKey(index, generation, self.ident)
-                record.survivor_key = key
-                item = self.statistics.solution_history[key]
-                self.statistics.solution_history[key] = replace(
-                    item, evaluation_id=record.evaluation_id
-                )
-                initial_records.append(record)
-            if (
-                self._best_evaluated is None
-                or candidate.fitness > self._best_evaluated.fitness
+        for offset in range(0, len(self.population), self.candidate_batch_size):
+            candidates = self.population[offset : offset + self.candidate_batch_size]
+            records = (
+                self._evaluate_many(candidates, generation, "initial")
+                if self.candidate_batch_size > 1
+                else [self._evaluate(candidates[0], generation, "initial")]
+            )
+            for index, (candidate, record) in enumerate(
+                zip(candidates, records), offset
             ):
-                self._best_evaluated = candidate
+                if record:
+                    key = SolutionHistoryKey(index, generation, self.ident)
+                    record.survivor_key = key
+                    self.statistics.solution_history[key] = replace(
+                        self.statistics.solution_history[key],
+                        evaluation_id=record.evaluation_id,
+                    )
+                    initial_records.append(record)
+                if (
+                    self._best_evaluated is None
+                    or candidate.fitness > self._best_evaluated.fitness
+                ):
+                    self._best_evaluated = candidate
+            self._notify_batch(generation, candidates, records)
         elapsed = perf_counter() - start
         if generation == 0:
             self.statistics._custom_time_tracking("evaluation", elapsed)
@@ -235,14 +346,16 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             source.ident if source else self.ident,
         )
 
-    def _create_offspring(self, generation):
+    def _create_offspring(self, generation, *, deferred=False):
         parent1 = self._selector.select(self.population)
         parents = [(self._parent_key(parent1, generation - 1), parent1.fitness)]
         args = parent1.arguments
+        sources = [parent1]
         crossover_name = mutation_name = None
         if random.random() < self._crossover_rate:
             parent2 = self._selector.select(self.population)
             parents.append((self._parent_key(parent2, generation - 1), parent2.fitness))
+            sources.append(parent2)
             args = self._crossover.crossover(args, parent2.arguments)
             crossover_name = getattr(
                 self._crossover, "last_operator_name", type(self._crossover).__name__
@@ -252,7 +365,25 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             mutation_name = getattr(
                 self._mutator, "last_operator_name", type(self._mutator).__name__
             )
-        candidate = self._solution_creator.create_solution(args)
+        if self.reuse_unchanged_offspring:
+            for source in sources:
+                if self._arguments_equal(args, source.arguments):
+                    # Independent metadata; retain the immutable result and its original ID.
+                    candidate = copy(source)
+                    candidate.meta = dict(source.meta)
+                    candidate._reused_parent = True
+                    item = self.statistics.solution_history.get(
+                        self._parent_key(source, generation - 1)
+                    )
+                    candidate._source_evaluation_id = (
+                        item.evaluation_id if item else None
+                    )
+                    if candidate._source_evaluation_id is None:
+                        raise ValueError(
+                            "Reused parent must have an evaluation identity"
+                        )
+                    return candidate, parents, crossover_name, mutation_name
+        candidate = args if deferred else self._solution_creator.create_solution(args)
         return candidate, parents, crossover_name, mutation_name
 
     def perform_generation(self, generation):
@@ -276,7 +407,7 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
         )
         # Ordinary GA creates its whole batch before evaluation, as before.
         batch = []
-        if not config:
+        if not config and self.candidate_batch_size == 1:
             count = (
                 required
                 if self.max_evaluations is None
@@ -295,27 +426,78 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
                 )
                 break
             start = perf_counter()
-            if config or attempts >= len(batch):
-                child, parents, cross, mutation = self._create_offspring(target)
+            if self.candidate_batch_size > 1:
+                # Even if every next child succeeds, these attempts are unavoidable.
+                # This bound preserves the scalar stopping point without speculative evaluations.
+                needed = max(required - len(children), quota - len(successes))
+                budget = (
+                    self.max_evaluations - self.evaluation_count
+                    if self.max_evaluations is not None
+                    else limit
+                )
+                count = min(self.candidate_batch_size, limit - attempts, budget, needed)
+                prepared = [
+                    self._create_offspring(target, deferred=True) for _ in range(count)
+                ]
+                cached = {
+                    i: entry[0]
+                    for i, entry in enumerate(prepared)
+                    if self.reuse_unchanged_offspring
+                    and isinstance(entry[0], SolutionCandidate)
+                    and getattr(entry[0], "_reused_parent", False)
+                }
+                created = (
+                    iter(
+                        self._create_many(
+                            [
+                                entry[0]
+                                for i, entry in enumerate(prepared)
+                                if i not in cached
+                            ]
+                        )
+                    )
+                    if len(cached) < len(prepared)
+                    else iter(())
+                )
+                candidates = [
+                    cached[i] if i in cached else next(created)
+                    for i in range(len(prepared))
+                ]
+                metadata = [entry[1:] for entry in prepared]
                 creation_seconds += perf_counter() - start
+                start = perf_counter()
+                records = self._evaluate_many(
+                    candidates, target, "offspring", metadata, fresh=config is not None
+                )
             else:
-                child, parents, cross, mutation = batch[attempts]
-            start = perf_counter()
-            record = self._evaluate(
-                child,
-                target,
-                "offspring",
-                parents,
-                cross,
-                mutation,
-                fresh=config is not None,
-            )
+                if config or attempts >= len(batch):
+                    child, parents, cross, mutation = self._create_offspring(target)
+                    creation_seconds += perf_counter() - start
+                else:
+                    child, parents, cross, mutation = batch[attempts]
+                candidates, metadata = [child], [(parents, cross, mutation)]
+                start = perf_counter()
+                records = [
+                    self._evaluate(
+                        child,
+                        target,
+                        "offspring",
+                        parents,
+                        cross,
+                        mutation,
+                        fresh=config is not None,
+                    )
+                ]
             evaluation_seconds += perf_counter() - start
-            attempts += 1
-            entry = (child, parents, cross, mutation, record)
-            children.append(entry)
-            successful = record.successful if config else False
-            (successes if successful else failures).append(entry)
+            for child, (parents, cross, mutation), record in zip(
+                candidates, metadata, records
+            ):
+                attempts += 1
+                entry = (child, parents, cross, mutation, record)
+                children.append(entry)
+                successful = record.successful if config else False
+                (successes if successful else failures).append(entry)
+            self._notify_batch(target, candidates, records)
         complete = len(children) >= required and (not config or len(successes) >= quota)
         unsuccessful_survivors = 0
         displaced_evaluation_ids = ()
@@ -370,7 +552,12 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
             self._population = new_population
             self.statistics._custom_time_tracking("creation", creation_seconds)
             self.statistics._custom_time_tracking("evaluation", evaluation_seconds)
-        evaluated_attempts = sum(entry[4] is not None for entry in children)
+        cached_attempts = sum(
+            entry[4] is not None and entry[4].reused for entry in children
+        )
+        evaluated_attempts = sum(
+            entry[4] is not None and not entry[4].reused for entry in children
+        )
         self.statistics.generation_summaries.append(
             GenerationSummary(
                 target,
@@ -379,13 +566,15 @@ class GeneticAlgorithm(Algorithm[A, R, SingleObjectiveFitness]):
                 len(successes) if config else 0,
                 unsuccessful_survivors,
                 quota,
-                evaluated_attempts / self.population_size,
+                (evaluated_attempts + cached_attempts) / self.population_size,
                 self.evaluation_count,
                 complete,
                 None if complete else self.termination_reason,
                 creation_seconds,
                 evaluation_seconds,
                 displaced_evaluation_ids,
+                cached_attempts=cached_attempts,
+                proposed_attempts=attempts,
             )
         )
         return complete

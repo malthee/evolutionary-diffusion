@@ -280,3 +280,15 @@ notebooks/saved_runs/
 .idea/copilot.data.migration.ask2agent.xml
 .idea/copilot.data.migration.ask.xml
 .idea/copilot.data.migration.agent.xml
+
+# External experiment inputs and generated CUDA runs
+experiment_inputs/
+experiment_runs/
+
+# Compact, verified empirical input distributed with the package
+!evolutionary_prompt_embedding/tensors/diffusiondb-full-bounds.safetensors
+
+# Local configurations, handovers and generated research evidence
+/.local/
+/.codegraph/
+/results/

@@ -7,6 +7,7 @@ import tarfile
 import urllib.request
 import warnings
 import zipfile
+from collections.abc import Hashable
 
 import pytorch_lightning as pl
 import torch
@@ -34,7 +35,7 @@ from evolutionary_model_helpers.auto_device import (
 )
 from aesthetic_predictor_v2_5 import convert_v2_5_from_siglip
 
-_model_cache: Dict[str, Any] = {}
+_model_cache: Dict[Hashable, Any] = {}
 """
 Cache for models used in evaluation to avoid keeping multiple copies in memory.
 Can be cleared with `clear_model_cache`.
@@ -49,7 +50,7 @@ def clear_model_cache():
     _model_cache.clear()
 
 
-def get_or_create_model(model_id: str, creator: Callable[[], Any]) -> Any:
+def get_or_create_model(model_id: Hashable, creator: Callable[[], Any]) -> Any:
     """
     Get a model from the cache or create it with the creator function.
     """
@@ -117,28 +118,42 @@ class AestheticsImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):
         )
         model = AestheticsImageEvaluator._MLP(input_size=AestheticsImageEvaluator.CLIP_EMBEDDING_SIZE)
         model.load_state_dict(predictor_model)
-        model.to(self.device)
-        model.eval()
-        clip_model, preprocess = clip.load(AestheticsImageEvaluator.CLIP_MODEL_NAME, device=self.device)
+        model.to(self.device).float().eval()
+        clip_model, preprocess = clip.load(self.clip_model_path or self.CLIP_MODEL_NAME, device=self.device, jit=False)
+        clip_model.float().eval()
         return model, clip_model, preprocess
 
-    def __init__(self,
-                 device: torch.device = auto_clip_device(),
-                 model_path: str = DEFAULT_MODEL_PATH):
-        self.device = device
-        self.model, self.clip_model, self.preprocess = get_or_create_model(f"AestheticsImageEvaluator_{model_path}",
-                                                                           lambda: self._setup_model(model_path))
+    def __init__(self, device: torch.device = auto_clip_device(), model_path: str = DEFAULT_MODEL_PATH, *, clip_model_path=None):
+        self.device = torch.device(device)
+        if self.device.type == "cuda" and self.device.index is None:
+            self.device = torch.device("cuda", torch.cuda.current_device())
+        self.clip_model_path = os.path.realpath(clip_model_path) if clip_model_path else None
+        identity = (os.path.realpath(model_path), self.clip_model_path or self.CLIP_MODEL_NAME,
+                    str(self.device), "float32", type(self))
+        self.model, self.clip_model, self.preprocess = get_or_create_model(
+            identity, lambda: self._setup_model(model_path))
 
-    @torch.no_grad()
+    @torch.inference_mode()
+    def evaluate_batch(self, results):
+        counts = [len(result.images) for result in results]
+        images = [image for result in results for image in result.images]
+        if not images:
+            return [0.0 for _ in results]
+        tensor = torch.stack([self.preprocess(_as_rgb_pil_image(img)) for img in images]).to(self.device, dtype=torch.float32)
+        with torch.autocast(device_type=self.device.type, enabled=False):
+            features = self.clip_model.encode_image(tensor).float()
+            # Match the original L2 normalization's zero-vector behavior.
+            norm = torch.linalg.vector_norm(features, dim=-1, keepdim=True)
+            features = features / torch.where(norm == 0, torch.ones_like(norm), norm)
+            scores = self.model(features).flatten().cpu().tolist()
+        output, offset = [], 0
+        for count in counts:
+            output.append(float(np.mean(scores[offset:offset + count])) if count else 0.0)
+            offset += count
+        return output
+
     def evaluate(self, result: ImageSolutionData) -> SingleObjectiveFitness:
-        scores = []
-        for img in result.images:
-            image = self.preprocess(img).unsqueeze(0).to(self.device)
-            image_features = self.clip_model.encode_image(image)
-            im_emb_arr = _normalized(image_features.cpu().detach())
-            prediction = self.model(im_emb_arr.to(self.device))
-            scores.append(prediction.item())
-        return np.mean(scores) if scores else 0.0
+        return self.evaluate_batch([result])[0]
 
 
 class AIDetectionImageEvaluator(SingleObjectiveEvaluator[ImageSolutionData]):

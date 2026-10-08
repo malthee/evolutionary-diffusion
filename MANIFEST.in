@@ -1,1 +1,16 @@
 recursive-include evolutionary_prompt_embedding/tensors *.pt
+recursive-include evolutionary_prompt_embedding/tensors *.safetensors *.json
+recursive-include evolutionary_prompt_embedding/assets *.html
+recursive-include docs *.md
+recursive-include configs/examples *.json
+recursive-include environments *.in *.lock
+include notebooks/*.ipynb
+prune .local
+prune .codegraph
+prune results
+prune experiment_inputs
+prune experiment_runs
+prune build
+prune dist
+prune notebooks/results
+global-exclude __pycache__ *.py[cod] .DS_Store
