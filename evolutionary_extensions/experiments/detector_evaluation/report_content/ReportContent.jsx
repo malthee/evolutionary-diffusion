@@ -57,7 +57,7 @@ export function ReportContent() {
       <img className="comparison-figure" src={`figures/rates-${comparison}-${codec}.png`} alt="Detection and false-positive rates with Wilson intervals" />
       {detectors.map(d => <details key={d}><summary>{d}: distributions and compression changes</summary><img className="comparison-figure" src={`figures/distribution-${d}.png`} alt={`${d} distributions`} /><img className="comparison-figure" src={`figures/codec-drift-${d}.png`} alt={`${d} JPEG minus PNG score changes`} /></details>)}
       {["real","random","prompted"].map(g => <details key={g}><summary>{g}: correlation and disagreement</summary><img className="comparison-figure" src={`figures/agreement-${g}-${codec}.png`} alt={`${g} correlation and disagreement matrices`} /></details>)}
-      <img className="comparison-figure" src="figures/runtime-memory.png" alt="Validated warm runtime and GPU memory" />
+      {reviewedRows("runtime").length > 0 && <img className="comparison-figure" src="figures/runtime-memory.png" alt="Validated warm runtime and GPU memory" />}
     </DataComponent>
   </article>;
 }
