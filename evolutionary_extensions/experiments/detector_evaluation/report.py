@@ -3,6 +3,7 @@
 import csv
 import itertools
 import json
+import time
 from pathlib import Path
 
 import numpy as np
@@ -30,6 +31,7 @@ def write_csv(path, rows):
 
 
 def export_report(config):
+    started = time.perf_counter()
     import matplotlib
 
     matplotlib.use("Agg")
@@ -347,6 +349,17 @@ def export_report(config):
         },
     }
     atomic_json(target / "reviewed-data.json", app_data)
+    timings = [
+        {"stage": path.stem, **json.loads(path.read_text())}
+        for path in sorted((root / "timing").glob("*.json"))
+    ]
+    atomic_json(target / "stage_timings.json", timings)
+    if timings:
+        columns = sorted(set().union(*(r.keys() for r in timings)))
+        write_csv(
+            target / "stage_timings.csv",
+            [{k: r.get(k) for k in columns} for r in timings],
+        )
     lines = [
         "# Image detector evaluation",
         "",
@@ -371,5 +384,12 @@ def export_report(config):
         "",
     ]
     (target / "findings.md").write_text("\n".join(lines))
-    atomic_json(target / "export_checksums.json", snapshot(target))
+    atomic_json(
+        root / "timing/report_exports.json",
+        {"exports_seconds": time.perf_counter() - started},
+    )
+    atomic_json(
+        target / "export_checksums.json",
+        {k: v for k, v in snapshot(target).items() if k != "export_checksums.json"},
+    )
     return target

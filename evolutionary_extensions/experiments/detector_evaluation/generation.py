@@ -54,7 +54,20 @@ def generate(config):
         "exports_seconds": 0.0,
     }
     bounds, bounds_manifest = load_bounds()
+    if (root / "bounds.json").exists() and json.loads(
+        (root / "bounds.json").read_text()
+    ) != bounds_manifest:
+        raise ValueError("Frozen coordinate bounds provenance differs")
     atomic_json(root / "bounds.json", bounds_manifest)
+    bounds_path = root / "coordinate_bounds.safetensors"
+    if bounds_path.exists():
+        saved_bounds = load_file(str(bounds_path))
+        if set(saved_bounds) != set(bounds) or any(
+            not torch.equal(saved_bounds[k], bounds[k].cpu()) for k in bounds
+        ):
+            raise ValueError("Archived coordinate bounds differ")
+    else:
+        save_file({key: value.cpu() for key, value in bounds.items()}, str(bounds_path))
     selection = json.loads((root / "selection.json").read_text())
     prompts = read_csv(config["prompts_csv"])
     # A normalized mapping is prepared from the release's unchanged descriptions.

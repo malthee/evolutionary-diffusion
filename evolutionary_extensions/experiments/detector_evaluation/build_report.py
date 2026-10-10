@@ -6,7 +6,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from evolutionary_extensions.persistence.packaging import atomic_json
+from evolutionary_extensions.persistence.packaging import atomic_json, snapshot
 
 
 def build_report(root, project, node, plugin):
@@ -31,6 +31,14 @@ def build_report(root, project, node, plugin):
         check=True,
     )
     shutil.copytree(project / "dist", root / "reports", dirs_exist_ok=True)
+    atomic_json(
+        root / "reports/export_checksums.json",
+        {
+            k: v
+            for k, v in snapshot(root / "reports").items()
+            if k != "export_checksums.json"
+        },
+    )
     return root / "reports/index.html"
 
 
