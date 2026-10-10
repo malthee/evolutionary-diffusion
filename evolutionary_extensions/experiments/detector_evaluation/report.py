@@ -297,7 +297,9 @@ def export_report(config):
             title="Validated warm throughput",
         )
         axes[1].set(
-            xlabel="Batch size", ylabel="GiB", title="Peak allocated GPU memory"
+            xlabel="Batch size",
+            ylabel="GiB",
+            title="Peak GPU memory (allocated/reserved maximum)",
         )
         axes[0].legend()
         axes[1].legend()
