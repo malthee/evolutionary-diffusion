@@ -6,6 +6,8 @@ completion or preserve failure evidence. No inference deadline is imposed.
 
 import argparse
 import asyncio
+import json
+import subprocess
 import time
 from pathlib import Path
 
@@ -30,10 +32,23 @@ async def execute(config_path):
     jupyter_root = Path(settings["jupyter_root"]).resolve()
     stage_root = root / "notebooks"
     stage_root.mkdir(exist_ok=True)
+    deployment = repo / "deployment_provenance.json"
+    if deployment.exists():
+        provenance = json.loads(deployment.read_text())
+        for filename, expected in provenance["files"].items():
+            path = repo / filename
+            if (
+                not path.resolve().is_relative_to(repo)
+                or hashes(path)["sha256"] != expected
+            ):
+                raise ValueError("Frozen deployed source checksum differs")
+        source_commit = provenance["source_commit"]
+    else:
+        source_commit = subprocess.check_output(
+            ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
+        ).strip()
     manifest = {
-        "source_commit": __import__("subprocess")
-        .check_output(["git", "-C", str(repo), "rev-parse", "HEAD"], text=True)
-        .strip(),
+        "source_commit": source_commit,
         "files": {
             str(p.relative_to(repo)): hashes(p)["sha256"]
             for p in (
