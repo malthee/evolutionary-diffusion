@@ -44,8 +44,12 @@ async def execute(config_path):
                 raise ValueError("Frozen deployed source checksum differs")
         source_commit = provenance["source_commit"]
     else:
-        source_commit = subprocess.check_output(
-            ["git", "-C", str(repo), "rev-parse", "HEAD"], text=True
+        source_commit = (
+            await asyncio.to_thread(
+                subprocess.check_output,
+                ["git", "-C", str(repo), "rev-parse", "HEAD"],
+                text=True,
+            )
         ).strip()
     manifest = {
         "source_commit": source_commit,
