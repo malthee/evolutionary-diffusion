@@ -1,0 +1,14 @@
+{
+  "detectors": ["safe", "universal_fake_detect", "ssp", "bfree", "aeroblade"],
+  "model_revision": "71153311d3dbb46851df1931d3ca6e939de83304",
+  "test_count": 100,
+  "calibration_count": 200,
+  "bootstrap_samples": 2000,
+  "sample_seed": 42,
+  "diffusion_seed": 0,
+  "patch_seed": 42,
+  "raise_csv": "../../.local/detector-evaluation/RAISE_1k.csv",
+  "prompts_csv": "../../.local/detector-evaluation/normalized-prompts.csv",
+  "assets": "../../.local/detector-evaluation/assets",
+  "output": "../../.local/detector-evaluation/results"
+}

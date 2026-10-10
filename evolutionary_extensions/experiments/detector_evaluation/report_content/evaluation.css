@@ -1,0 +1,20 @@
+.detector-report { --data-app-layout-intent: authored-report; --data-app-content-width: 1100px; }
+.detector-report .evaluation-filters { display:flex; flex-wrap:wrap; gap:1rem; margin:1.5rem 0; }
+.detector-report .evaluation-filters label { display:flex; align-items:center; gap:.5rem; }
+.detector-report .evaluation-scroll { overflow-x:auto; max-width:100%; }
+.detector-report table { width:100%; border-collapse:collapse; font-size:.85rem; }
+.detector-report th,.detector-report td { padding:.6rem; text-align:left; border-bottom:1px solid var(--border); }
+.detector-report td { font-variant-numeric:tabular-nums; }
+.detector-report .evaluation-matrix td { text-align:center; }
+.detector-report .evaluation-matrix button { display:flex; flex-direction:column; align-items:center; gap:.25rem; color:inherit; background:transparent; border:0; cursor:pointer; width:100%; }
+.detector-report .image-button { font-size:.75rem; }
+.detector-report .percentile-0 { background:#edf2f7; color:#162c45; }
+.detector-report .percentile-1 { background:#d7e4ef; color:#162c45; }
+.detector-report .percentile-2 { background:#abc9de; color:#162c45; }
+.detector-report .percentile-3 { background:#6092b8; color:#102030; }
+.detector-report .percentile-4,.detector-report .percentile-5 { background:#285b8e; color:#fff; }
+.detector-report .image-detail { margin:1rem 0; }
+.detector-report .image-detail img { max-width:100%; height:auto; }
+.detector-report .ssp-patch { image-rendering:pixelated; }
+.detector-report .comparison-figure { width:100%; height:auto; margin:1rem 0; }
+.detector-report details { margin:.8rem 0; }
