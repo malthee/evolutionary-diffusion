@@ -270,6 +270,13 @@ def score(config, detector):
     atomic_json(root / "provenance" / f"{detector}.json", identity)
     journal = ScoreJournal(root, detector, identity)
     rows = json.loads((root / "images.json").read_text())
+    for row in rows:
+        path = root / row["path"]
+        if (
+            not path.resolve().is_relative_to(root.resolve())
+            or hashes(path)["sha256"] != row["sha256"]
+        ):
+            raise ValueError("Frozen scoring image checksum differs")
     pending = [r for r in rows if journal.existing(r) is None]
     if not pending:
         status(root, detector, completed=len(rows), recovered=True)
@@ -292,6 +299,21 @@ def score(config, detector):
         tensors, _ = adapter.prepare(pool)
         preprocessing = time.perf_counter() - prep_start
         batch, baseline = profile_classifier(adapter, tensors, root, detector)
+        batching_path = root / "batching" / f"{detector}.json"
+        if batching_path.exists():
+            frozen_batch = json.loads(batching_path.read_text())
+            if frozen_batch["detector_identity"] != journal.identity:
+                raise ValueError("Changed classifier batching configuration")
+            batch = frozen_batch["batch"]
+            profile = json.loads((root / "profiles" / f"{detector}.json").read_text())
+            if not any(
+                p["batch"] == batch and p["valid"] for p in profile["candidates"]
+            ):
+                raise RuntimeError("Frozen recovery batch no longer passes validation")
+        else:
+            atomic_json(
+                batching_path, {"detector_identity": journal.identity, "batch": batch}
+            )
         native = np.array([adapter.official_scalar(row) for row in pool])
         if not np.allclose(native, baseline, atol=1e-4, rtol=0):
             raise RuntimeError("Official scalar inference parity failed")

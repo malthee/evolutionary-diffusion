@@ -102,7 +102,13 @@ class Classifier:
 
         tensors, details = [], []
         for row in rows:
-            with Image.open(self.root / row["path"]) as file:
+            path = self.root / row["path"]
+            if (
+                not path.resolve().is_relative_to(self.root.resolve())
+                or hashes(path)["sha256"] != row["sha256"]
+            ):
+                raise ValueError("Scoring input differs from its frozen image identity")
+            with Image.open(path) as file:
                 image = file.convert("RGB")
             detail = {}
             if self.detector == "ssp":
