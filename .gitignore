@@ -292,3 +292,7 @@ experiment_runs/
 /.local/
 /.codegraph/
 /results/
+
+# Local uv and Ruff caches
+.uv-cache/
+.ruff_cache/

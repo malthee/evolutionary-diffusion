@@ -279,7 +279,7 @@ def test_aesthetics_batch_precision_empty_and_cache_identity(monkeypatch):
 def test_notebook_template_is_safe_valid_and_parameterized():
     notebook = nbformat.read(
         Path(__file__).resolve().parents[1]
-        / "notebooks/prompt_embedding_experiment.ipynb",
+        / "pre-testing/prompt_embedding/prompt_embedding_experiment.ipynb",
         as_version=4,
     )
     nbformat.validate(notebook)

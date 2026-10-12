@@ -3,8 +3,11 @@ recursive-include evolutionary_prompt_embedding/tensors *.safetensors *.json
 recursive-include evolutionary_prompt_embedding/assets *.html
 recursive-include docs *.md
 recursive-include configs/examples *.json
-recursive-include environments *.in *.lock
+recursive-include environments *.in *.lock *.txt
+include AGENTS.md uv.lock
 include notebooks/*.ipynb
+recursive-include pre-testing *.ipynb *.md
+recursive-include evolutionary_extensions/experiments/detector_evaluation/report_content *.jsx *.css
 prune .local
 prune .codegraph
 prune results

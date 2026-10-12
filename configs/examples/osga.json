@@ -34,7 +34,7 @@
     "jupyter_url": "http://127.0.0.1:8888",
     "kernel_name": "evolutionary-experiments",
     "jupyter_root": null,
-    "notebook": "notebooks/prompt_embedding_experiment.ipynb",
+    "notebook": "pre-testing/prompt_embedding/prompt_embedding_experiment.ipynb",
     "runner_count": 1,
     "warm_runners": true
   },

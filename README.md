@@ -37,9 +37,18 @@ pip install -e ".[all]"
 The dependency set is validated on Python 3.12 and 3.13.
 Now you are ready to go with the notebooks or custom code. CUDA and MPS are supported.
 
+Package metadata now lives in `pyproject.toml`; `setup.py` is a compatibility entry
+point. For a locked uv environment, run `uv sync --locked --extra cma` for the CPU
+Sep-CMA example, or select `--extra imaging --extra prompt_embedding --extra execution`
+for image notebooks. See [setup and extras](docs/setup.md).
+
+[Algorithm notebooks](notebooks/README.md) contain GA/OSGA, island GA, NSGA and
+[Sep-CMA](notebooks/sep_cma_notebook.ipynb). Detector evaluations, campaign recipes
+and offline embedding analysis are organized under [pre-testing](pre-testing/README.md).
+
 ## Experiment and cloud workflows
 
-The reusable [prompt-embedding notebook](notebooks/prompt_embedding_experiment.ipynb)
+The reusable [prompt-embedding notebook](pre-testing/prompt_embedding/prompt_embedding_experiment.ipynb)
 uses disabled [GA](configs/examples/ga.json)/[OSGA](configs/examples/osga.json)
 examples. Install `.[imaging,prompt_embedding,execution]` for managed Jupyter campaigns
 with Python 3.11 or newer. Keep actual campaign settings and outputs under ignored

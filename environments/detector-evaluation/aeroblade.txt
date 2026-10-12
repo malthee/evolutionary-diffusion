@@ -1,0 +1,3 @@
+# Python 3.11; isolated official environment at source commit
+# 50fc2b22c929fdc481757adc4bc81bf98d36f9fc. Never install into a live campaign.
+-r aeroblade-official.txt
