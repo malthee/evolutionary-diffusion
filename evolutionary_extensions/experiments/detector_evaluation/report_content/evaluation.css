@@ -18,3 +18,7 @@
 .detector-report .ssp-patch { image-rendering:pixelated; }
 .detector-report .comparison-figure { width:100%; height:auto; margin:1rem 0; }
 .detector-report details { margin:.8rem 0; }
+
+.detector-report .matrix-scroll { max-height:640px; overflow:auto; }
+.detector-report .evaluation-matrix thead th { position:sticky; top:0; z-index:1; background:var(--surface); }
+.detector-report .evaluation-scroll:not(.matrix-scroll) td { text-align:right; }

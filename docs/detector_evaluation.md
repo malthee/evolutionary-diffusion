@@ -58,7 +58,7 @@ environment requires Python 3.11 and its older pinned stack; never install it in
 the current experiment environment. Environment locks are under
 `environments/detector-evaluation/`. Archive resolved package inventories too.
 
-`notebooks/detector_evaluation.ipynb` is a thin recipe interface. The managed
+`pre-testing/detector_evaluation/detector_evaluation.ipynb` is a thin recipe interface. The managed
 controller accepts a private `managed` configuration containing the existing
 Jupyter URL, repository/root paths, per-stage kernels and lifecycle owner:
 

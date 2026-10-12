@@ -1,33 +1,27 @@
 """Reproducible scientific exports and reviewed rows for the local Data app."""
 
-import csv
 import itertools
 import json
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
 
 from evolutionary_extensions.persistence.packaging import atomic_json, snapshot
+from evolutionary_extensions.persistence.tables import write_csv
 
 from .config import CODECS, DETECTORS
 
 COLORS = ("#285b8e", "#af8324", "#c25f35", "#6b7634", "#ad6285")
 
 
-def write_csv(path, rows):
-    if not rows:
-        raise ValueError("Cannot export empty evidence")
-    with Path(path).open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(
-                {
-                    k: json.dumps(v) if isinstance(v, (list, dict)) else v
-                    for k, v in row.items()
-                }
-            )
+def plot_interval(ax, point, position, bounds, color):
+    """Draw stored interval endpoints independently of the point estimate."""
+    low, high = bounds
+    ax.hlines(position, low, high, color=color)
+    ax.plot([low, high], [position, position], "|", color=color, markersize=6)
+    ax.plot(point, position, "o", color=color)
 
 
 def export_report(config):
@@ -96,15 +90,7 @@ def export_report(config):
             ("Detection rate", "False-positive rate"),
         ):
             for i, (color, m) in enumerate(zip(COLORS, selected)):
-                low, high = m[interval]
-                ax.errorbar(
-                    m[metric],
-                    i,
-                    xerr=[[m[metric] - low], [high - m[metric]]],
-                    fmt="o",
-                    color=color,
-                    capsize=3,
-                )
+                plot_interval(ax, m[metric], i, m[interval], color)
             ax.set(yticks=range(5), yticklabels=DETECTORS, xlim=(0, 1), title=title)
             ax.invert_yaxis()
         figure.suptitle(f"{group} · {codec} · PNG thresholds · 95% Wilson intervals")
@@ -332,9 +318,7 @@ def export_report(config):
     app_data = {
         "title": "Image detector evaluation",
         "surface": "report",
-        "generatedAt": __import__("datetime")
-        .datetime.now(__import__("datetime").timezone.utc)
-        .isoformat(),
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
         "filters": [],
         "queries": {
             k: {

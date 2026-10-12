@@ -1,6 +1,8 @@
 # Repository architecture
 
-The algorithm libraries are independent of cloud providers. Experiments compose
+The algorithm libraries are independent of cloud providers. Reusable optimizer
+adapters, including separable CMA-ES, belong in `evolutionary/algorithms/`;
+embedding coordinate conversion belongs in `evolutionary_prompt_embedding/`. Experiments compose
 those libraries; execution owns notebook sessions; persistence owns completed
 archives. Azure only prepares metadata for an existing host.
 
@@ -14,7 +16,9 @@ archives. Azure only prepares metadata for an existing host.
 | `evolutionary_extensions/azure/` | Local deployment configuration and kernel specification | Persistence primitives; no resource lifecycle ownership |
 | `configs/examples/` | Portable, disabled GA/OSGA examples | No credentials, machine inventory or empirical host tuning |
 | `environments/analysis/` | Locked offline-analysis environment | Separate from inference |
-| `notebooks/` | Experiment and analysis entry points | Import package implementations |
+| `notebooks/` | Ready-to-run algorithm examples | Reusable algorithm/domain packages |
+| `pre-testing/` | Detector benchmarks, campaign recipes and embedding analysis | Experiment/domain packages |
+| `pyproject.toml`, `uv.lock` | Package metadata, optional extras and resolved development dependencies | Setuptools; compatible with pip and uv |
 | `docs/` | Public architecture, setup and behavior documentation | Linked from the root README |
 | `.local/` (ignored) | Private profiles, host evidence, operational tools, handovers, generated results | Never included in release artifacts |
 
@@ -36,6 +40,8 @@ remain ignored for older notebook workflows.
 
 ## Documentation map
 
+- [Package setup](setup.md): pip/uv, extras and distribution assets.
+- [Sep-CMA](sep_cma.md): reusable optimizer and framework adapter.
 - [Campaign configuration](configuration.md): portable setup and recipe controls.
 - [Azure host preparation](azure.md): selected interpreter, paths and kernel.
 - [Scientific artifacts](experiment_artifacts.md): precision, recording and persistence.

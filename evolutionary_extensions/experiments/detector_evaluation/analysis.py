@@ -157,6 +157,11 @@ def analyze(config):
                 boot, [0.025, 0.975], axis=0
             ).T.tolist()
             metrics.append(entry)
+    primary = {
+        (m["detector"], m["codec"], m["group"]): m
+        for m in metrics
+        if m["regime"] == "png_locked"
+    }
     differences = []
     for a, b in itertools.combinations(DETECTORS, 2):
         for codec, group in itertools.product(CODECS, ("random", "prompted")):
@@ -165,18 +170,8 @@ def analyze(config):
                 [0.025, 0.975],
                 axis=0,
             ).T
-            point_a = next(
-                m
-                for m in metrics
-                if (m["detector"], m["codec"], m["group"], m["regime"])
-                == (a, codec, group, "png_locked")
-            )
-            point_b = next(
-                m
-                for m in metrics
-                if (m["detector"], m["codec"], m["group"], m["regime"])
-                == (b, codec, group, "png_locked")
-            )
+            point_a = primary[a, codec, group]
+            point_b = primary[b, codec, group]
             differences.append(
                 {
                     "a": a,

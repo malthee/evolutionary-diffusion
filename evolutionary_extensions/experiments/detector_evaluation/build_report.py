@@ -15,10 +15,13 @@ def build_report(root, project, node, plugin):
     data = json.loads((root / "reports/reviewed-data.json").read_text())
     data["id"] = existing["id"]
     data["status"] = "ready"
+    data["buildStatus"] = "complete"
     atomic_json(project / "src/data.json", data)
     content = Path(__file__).parent / "report_content"
-    for source in content.iterdir():
-        shutil.copy2(source, project / "src/content/report" / source.name)
+    destination = project / "src/content/report"
+    destination.mkdir(parents=True, exist_ok=True)
+    for filename in ("ReportContent.jsx", "evaluation.css"):
+        shutil.copy2(content / filename, destination / filename)
     subprocess.run(
         [
             str(node),

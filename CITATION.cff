@@ -5,6 +5,8 @@ cff-version: 1.2.0
 title: Evolutionary Diffusion
 message: Please cite this software using these metadata.
 type: software
+version: 0.15.0
+date-released: 2026-10-12
 authors:
   - given-names: Marcel
     family-names: Salvenmoser

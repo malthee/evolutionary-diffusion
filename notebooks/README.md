@@ -1,33 +1,21 @@
-# Notebooks of Experiments
-This folder contains templates and ready-to-use notebooks to execute a 
-variety of evolutionary experiments with image-generation.
+# Algorithm notebooks
 
-- [prompt_embedding_experiment.ipynb](prompt_embedding_experiment.ipynb): reusable
-  DiffusionDB-initialized GA/OSGA with complete scientific outputs and optional Drive.
-  [OSGA](../configs/examples/osga.json) and [GA](../configs/examples/ga.json) profiles use the
-  one-step/population-64/6,400-evaluation recipe. Execution is disabled by default.
-  See [campaign configuration](../docs/configuration.md) and
-  [Azure host preparation](../docs/azure.md).
+Ready-to-run examples using the reusable implementations in `evolutionary/algorithms/`:
 
-- [ga_osga_notebook.ipynb](ga_osga_notebook.ipynb): GA/OSGA with fixed operator pools,
-  reproducible diffusion noise and complete evaluation/lineage JSON export.
-  Configuration only; experiments have not been run.
+| Notebook | Algorithm |
+|---|---|
+| [ga_notebook.ipynb](ga_notebook.ipynb) | Genetic algorithm in prompt-embedding space |
+| [ga_osga_notebook.ipynb](ga_osga_notebook.ipynb) | GA/OSGA with fixed operator pools and complete attempt/lineage export |
+| [island_ga_notebook.ipynb](island_ga_notebook.ipynb) | Island GA with migration |
+| [nsga_notebook.ipynb](nsga_notebook.ipynb) | U-NSGA-III, NSGA-II and NSGA-III |
+| [sep_cma_notebook.ipynb](sep_cma_notebook.ipynb) | Separable CMA-ES; deterministic CPU example, no model downloads |
 
-GA, OSGA, island-GA and NSGA use the working checkout, seed after model setup and
-recreate fixed diffusion noise. Both standalone GA notebooks save JSON and pickle;
-analysis uses completed generations. See [configuration and reproducibility](../docs/osga.md)
-for operator parameters, evaluation costs, export fields and island restrictions.
+See [setup](../docs/setup.md), [GA/OSGA](../docs/osga.md),
+[NSGA](../docs/nsga.md) and [Sep-CMA](../docs/sep_cma.md) for configuration.
+Image notebooks preserve fixed diffusion noise, original embeddings and existing
+image/JSON/pickle exports. Configure output paths before running.
 
-The NSGA notebook defaults to U-NSGA-III, with NSGA-II/III comparisons and JSON/pickle
-export. See [configuration and algorithm behavior](../docs/nsga.md) for reference
-directions and implementation limits.
-
-## Embedding persistence and offline visualization
-
-GA, OSGA, NSGA and island GA persist original embeddings incrementally in a
-viewer-independent Safetensors archive. `save_embeddings` and `save_images` are
-independent switches; each experiment has a unique run directory. Analyze it
-locally using [embedding_analysis.ipynb](embedding_analysis.ipynb), which handles
-projection, Embedding Atlas 2D exploration, 3D image markers and optional images.
-See [the archive and analysis guide](../docs/embedding_analysis.md) for the format,
-separate locked environment, storage estimates and validation commands.
+Campaign recipes, detector comparisons and offline embedding analysis are under
+[pre-testing](../pre-testing/README.md). Their execution switches remain disabled
+by default. Actual campaign configuration and generated results stay outside the
+public examples.

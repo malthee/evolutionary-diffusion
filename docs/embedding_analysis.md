@@ -2,7 +2,7 @@
 
 Experiments record original embeddings once. Visualization, dimensionality
 reduction and viewer-specific conversion run later in
-[`../notebooks/embedding_analysis.ipynb`](../notebooks/embedding_analysis.ipynb).
+[`../pre-testing/embedding_analysis/embedding_analysis.ipynb`](../pre-testing/embedding_analysis/embedding_analysis.ipynb).
 
 ## Run an experiment
 
@@ -108,7 +108,7 @@ Run from the repository root with Python 3.13 and `uv`:
 uv venv .venv-analysis --python 3.13
 uv pip sync --python .venv-analysis/bin/python environments/analysis/requirements.lock
 uv pip install --python .venv-analysis/bin/python --no-deps -e .
-.venv-analysis/bin/python -m jupyterlab notebooks/embedding_analysis.ipynb
+.venv-analysis/bin/python -m jupyterlab pre-testing/embedding_analysis/embedding_analysis.ipynb
 ```
 
 Select the analysis environment's kernel. The universal lock includes platform

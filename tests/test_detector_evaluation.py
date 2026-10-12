@@ -295,3 +295,53 @@ def test_batch_profile_rejects_changed_image_order(tmp_path, monkeypatch):
     result = json.loads((tmp_path / "profiles/safe.json").read_text())
     assert chosen == 1
     assert [r["valid"] for r in result["candidates"]] == [True, False, False, False]
+
+
+def test_report_preserves_interval_endpoints_even_outside_point_estimate():
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from evolutionary_extensions.experiments.detector_evaluation.report import (
+        plot_interval,
+    )
+
+    figure, ax = plt.subplots()
+    try:
+        # Wilson at zero has a positive floating-point lower endpoint. An interval
+        # can also exclude a point estimate; neither case justifies changing it.
+        for index, (point, bounds) in enumerate(
+            ((0.0, wilson(0, 100)), (0.1, [0.2, 0.3]))
+        ):
+            plot_interval(ax, point, index, bounds, "blue")
+            assert ax.collections[index].get_segments()[0].tolist() == [
+                [bounds[0], index],
+                [bounds[1], index],
+            ]
+            assert ax.lines[2 * index].get_xdata().tolist() == bounds
+            assert ax.lines[2 * index + 1].get_xdata().tolist() == [point]
+        figure.canvas.draw()
+    finally:
+        plt.close(figure)
+
+
+def test_cpu_report_exports_full_matrix_and_preserves_score_evidence(tmp_path):
+    from evolutionary_extensions.experiments.detector_evaluation.report import (
+        export_report,
+    )
+
+    config = fixture_evaluation(tmp_path)
+    data = analyze(config)
+    target = export_report(config)
+    assert json.loads((target / "scores.json").read_text()) == data["scores"]
+    reviewed = json.loads((target / "reviewed-data.json").read_text())
+    matrix = reviewed["queries"]["matrix"]["rows"]
+    assert len(matrix) == 24
+    for row in matrix:
+        assert set(row["detectors"]) == set(DETECTORS)
+        assert (target / row["thumbnail"]).is_file()
+        assert (target / row["image_url"]).is_file()
+        assert (tmp_path / row["detectors"]["ssp"]["patch_path"]).is_file()
+    assert (target / "figures/rates-random-jpeg95.svg").is_file()
+    assert (target / "figures/roc-prompted-png.pdf").is_file()

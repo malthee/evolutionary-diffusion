@@ -1,5 +1,29 @@
 # Changelog for the evolutionary package
 
+## 0.15.0 (12.10.2026)
+
+- Add a reproducible five-detector benchmark with frozen inputs, score provenance,
+  disjoint calibration/test sets, paired uncertainty estimates, resumable scoring
+  and offline scientific/interactive reports.
+- Add detector-directed separable CMA-ES search with exact fresh query budgets,
+  generator/scorer validation, frozen finalists and independent held-out robustness
+  measurements. Keep vendor model environments isolated.
+- Expose reusable `SepCMAOptimizer` and `SepCMAES` adapters in
+  `evolutionary/algorithms/`. Preserve private RNGs, pending populations and the
+  existing detector-search checkpoint class path. Bind extracted optimizer and
+  coordinate sources to search provenance.
+- Move campaign, detector-evaluation, multi-objective evaluation and embedding
+  analysis notebooks into their corresponding `pre-testing/` folders. Keep
+  `notebooks/` for algorithm examples, including a complete CPU Sep-CMA notebook.
+  Update portable configuration and documentation links for the migration.
+- Consolidate package metadata in `pyproject.toml`, retain the `setup.py`
+  compatibility entry point, and add a checked-in uv lock. Declare NumPy in the
+  core, compose optional extras without repeated dependency lists, and include
+  the model-helper stack in the sound extra. Preserve existing model version pins.
+- Include detector report assets and pinned environment recipes in distributions;
+  simplify report exports and metric lookup. Replace `.junie` guidance with
+  repository-specific `AGENTS.md`.
+
 ## 0.14.0 (08.10.2026)
 
 - Add reusable GA/OSGA prompt-embedding experiments with pinned SDXL-Turbo inputs,

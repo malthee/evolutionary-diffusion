@@ -65,7 +65,7 @@ best-evaluation image references, environment/model/source manifests and portabl
 checkpoints. Checkpoints preserve population, RNG, frozen donor bank and history;
 optimization resume is not implemented. PNG worker time overlaps inference and
 is reported separately; core wall time includes callbacks/persistence, final
-export time is separate. Use the [offline analysis notebook](../notebooks/embedding_analysis.ipynb) for
+export time is separate. Use the [offline analysis notebook](../pre-testing/embedding_analysis/embedding_analysis.ipynb) for
 projections; additional evaluators are optional.
 
 Finalization validates finite tensors/scores, evaluation identities, all PNGs,

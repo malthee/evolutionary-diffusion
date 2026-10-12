@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "evolutionary"
+version = "0.15.0"
+description = "Evolutionary algorithms with separate argument and result representations for generative models."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "malthee"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "numpy>=2.1,<3.0",
+    "tqdm>=4.67.3",
+    "matplotlib>=3.10.8",
+    "pymoo>=0.6.1.6",
+]
+
+[project.urls]
+Repository = "https://github.com/malthee/evolutionary-diffusion"
+
+[project.optional-dependencies]
+model_helpers = [
+    "torch~=2.11.0",
+    "diffusers~=0.37.1",
+    "transformers~=5.4.0",
+    "accelerate~=1.13.0",
+    "Pillow~=12.1",
+    "certifi>=2024.0.0",
+    "huggingface-hub>=1.5,<2",
+]
+imaging = [
+    "evolutionary[model_helpers]",
+    "graphviz~=0.21",
+    "clip @ git+https://github.com/openai/CLIP.git@ded190a052fdf4585bd685cee5bc96e0310d2c93",
+    "torchvision~=0.26.0",
+    "torchmetrics[multimodal]~=1.9.0",
+    "pytorch-lightning~=2.6.1",
+    "imageio>=2.37.3",
+    "aesthetic-predictor-v2-5~=2024.12.18.1",
+    "PyYAML>=6,<7",
+]
+prompt_embedding = [
+    "evolutionary[model_helpers]",
+    "safetensors>=0.7,<1",
+]
+prompt_embedding_utils = [
+    "evolutionary[prompt_embedding]",
+    "datasets~=4.8.4",
+]
+sound = [
+    "evolutionary[model_helpers]",
+    "audiobox_aesthetics~=0.0.4",
+    "soundfile~=0.13.1",
+]
+execution = [
+    "aiohttp>=3.13,<4",
+    "nbformat>=5.10,<6",
+    "nbclient>=0.10,<0.11",
+    "ipykernel>=6.30,<8",
+]
+cma = [
+    "cma==4.4.4",
+]
+all = [
+    "evolutionary[imaging,prompt_embedding_utils,sound,execution,cma]",
+]
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1", "nbformat>=5.10,<6", "nbclient>=0.10,<0.11", "ipykernel>=6.30,<8"]
+
+[tool.setuptools.packages.find]
+include = ["evolutionary", "evolutionary.*", "evolutionary_imaging*", "evolutionary_model_helpers*", "evolutionary_prompt_embedding*", "evolutionary_sound*", "evolutionary_extensions*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+evolutionary_prompt_embedding = ["tensors/*.pt", "tensors/*.safetensors", "tensors/*.json", "assets/*.html"]
+"evolutionary_extensions.experiments.detector_evaluation" = ["report_content/*.jsx", "report_content/*.css"]

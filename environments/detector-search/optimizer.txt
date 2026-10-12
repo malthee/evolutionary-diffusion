@@ -1,0 +1,2 @@
+# Install only in the isolated search environments; keep the active stack intact.
+cma==4.4.4
