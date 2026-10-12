@@ -31,7 +31,7 @@ Repository = "https://github.com/malthee/evolutionary-diffusion"
 [project.optional-dependencies]
 model_helpers = [
     "torch~=2.11.0",
-    "diffusers~=0.37.1",
+    "diffusers>=0.37.1,<0.39.0",
     "transformers~=5.4.0",
     "accelerate~=1.13.0",
     "Pillow~=12.1",
