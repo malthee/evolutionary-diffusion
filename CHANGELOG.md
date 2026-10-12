@@ -1,5 +1,37 @@
 # Changelog for the evolutionary package
 
+## 0.16.0 (12.10.2026)
+
+- BREAKING dependency baseline: update the optional model stack to PyTorch 2.14.1,
+  Torchvision 0.29.1, Diffusers 0.38 and Transformers 5.17; update the
+  dataset utilities extra to Datasets 5.0.1. The core API and Python 3.10
+  minimum remain unchanged. The Apple Silicon model stack now requires
+  macOS 14 or newer.
+- Address eight root `uv.lock` Dependabot alerts: dynamic-code trust bypasses,
+  tokenizer/processor path traversal, reference-filesystem template execution,
+  source-distribution Unicode exclusion bypass and TorchScript memory corruption.
+  Refresh the root lock with patched releases confirmed in upstream source.
+- Partially remediate Datasets metadata traversal with 5.0.1: the reported parent,
+  absolute and URL paths are rejected, but a backslash path variant still escapes
+  the dataset directory on POSIX. The latest 5.1 release has the same gap; treat
+  untrusted folder metadata as unsafe until upstream closes the boundary.
+- Require fsspec 2026.6 or newer and setuptools 83 or newer in the model-helper
+  stack; also raise the isolated build backend's setuptools minimum to 83. These
+  existing transitive dependencies now have explicit security floors for pip
+  installations as well as the checked-in uv lock.
+- Accelerate checkpoint traversal/denial-of-service (GHSA-4j2p-28q2-5m79) remains
+  unresolved: the latest stable 1.15 release lacks the fix and the proposed
+  upstream patches were closed without merging. Retain the existing release line;
+  do not treat upgrading to 1.15 as remediation.
+- Migration: Datasets 5 streaming shuffle uses multiple input shards by default.
+  Pass `max_buffer_input_shards=1` to `IterableDataset.shuffle()` when the earlier
+  behavior is required. PyTorch 2.13 removed named tensor APIs; downstream users
+  of those APIs must migrate to positional dimensions.
+- Use new provenance/output directories and repeat generator/detector validation
+  before running experiments on the upgraded stack. Preserve existing vendor and
+  analysis environment locks as historical recipes; their older pins are outside
+  this root-lock security update.
+
 ## 0.15.0 (12.10.2026)
 
 - Add a reproducible five-detector benchmark with frozen inputs, score provenance,

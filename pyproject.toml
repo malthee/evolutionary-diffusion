@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=77"]
+requires = ["setuptools>=83"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "evolutionary"
-version = "0.15.0"
+version = "0.16.0"
 description = "Evolutionary algorithms with separate argument and result representations for generative models."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -30,19 +30,21 @@ Repository = "https://github.com/malthee/evolutionary-diffusion"
 
 [project.optional-dependencies]
 model_helpers = [
-    "torch~=2.11.0",
-    "diffusers~=0.37.1",
-    "transformers~=5.4.0",
+    "torch~=2.14.1",
+    "diffusers~=0.38.0",
+    "transformers~=5.17.0",
     "accelerate~=1.13.0",
     "Pillow~=12.1",
     "certifi>=2024.0.0",
     "huggingface-hub>=1.5,<2",
+    "fsspec>=2026.6.0",
+    "setuptools>=83",
 ]
 imaging = [
     "evolutionary[model_helpers]",
     "graphviz~=0.21",
     "clip @ git+https://github.com/openai/CLIP.git@ded190a052fdf4585bd685cee5bc96e0310d2c93",
-    "torchvision~=0.26.0",
+    "torchvision~=0.29.1",
     "torchmetrics[multimodal]~=1.9.0",
     "pytorch-lightning~=2.6.1",
     "imageio>=2.37.3",
@@ -55,7 +57,7 @@ prompt_embedding = [
 ]
 prompt_embedding_utils = [
     "evolutionary[prompt_embedding]",
-    "datasets~=4.8.4",
+    "datasets~=5.0.1",
 ]
 sound = [
     "evolutionary[model_helpers]",

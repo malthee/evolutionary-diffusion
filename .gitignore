@@ -5,6 +5,10 @@
 
 # Cannot push models as they are too large
 *.pth
+*.pt
+*.ckpt
+*.pickle
+*.onnx
 *.safetensors
 notebooks/models/
 models/
@@ -17,6 +21,11 @@ pre-testing/**/*.png
 notebooks/results
 
 # Generated experiment outputs
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.whl
 embedding_runs/
 analysis_cache/
 notebooks/AIDResults/
@@ -289,9 +298,9 @@ experiment_runs/
 !evolutionary_prompt_embedding/tensors/diffusiondb-full-bounds.safetensors
 
 # Local configurations, handovers and generated research evidence
-/.local/
-/.codegraph/
-/results/
+.local/
+.codegraph/
+results/
 
 # Local uv and Ruff caches
 .uv-cache/

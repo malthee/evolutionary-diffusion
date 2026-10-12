@@ -37,6 +37,41 @@ The inference, older vendor detector stacks and offline analysis environments
 remain separate; their requirements are under `environments/`. The root lock
 does not replace vendor pins or guarantee CUDA/model parity.
 
+## Security baseline in 0.16.0
+
+The optional model stack now requires PyTorch 2.14.1 / torchvision 0.29.1,
+Diffusers 0.38, Transformers 5.17 and Datasets 5.0.1.
+These release lines address eight root lockfile alerts and partially remediate
+the Datasets alert;
+fsspec 2026.6 and setuptools 83 are explicit security minimums, including
+setuptools in isolated builds. The core API and Python 3.10 minimum are unchanged.
+The Apple Silicon model extras require macOS 14 or newer; the patched Torch and
+torchvision releases no longer provide macOS 11–13 wheels.
+
+Datasets 5 changes streaming shuffle to mix multiple input shards. Set
+`max_buffer_input_shards=1` on streaming shuffle to retain the earlier behavior.
+PyTorch 2.13 removed named-tensor APIs such as `rename`, `refine_names` and
+`align_to`; callers using those APIs must migrate. Transformers 5.17 is the first
+checked release that gates custom-generation code downloads on trust consent.
+Earlier advisory version ranges do not capture that boundary reliably. PyTorch 2.14 contains the TorchScript fix; the
+reported 2.13 minimum still crashes on the original trigger.
+
+Datasets 5.0.1 rejects the reported parent-directory, absolute and URL paths,
+but a backslash metadata path variant still escapes the dataset directory on
+POSIX. The latest 5.1 release retains that gap. Use trusted folder metadata;
+the version update alone does not fully enforce containment.
+
+Accelerate's sharded-checkpoint path traversal/denial-of-service alert remains
+open. Its latest stable 1.15 release has no fix, and the proposed upstream patches
+were closed without merging. The existing Accelerate requirement is retained;
+use trusted checkpoint indexes while awaiting a complete upstream fix.
+
+Recreate the selected environment from the lockfile and use fresh experiment
+output directories with new dependency provenance. Repeat generator and detector
+reference validation before comparing scientific results across these baselines.
+The historical vendor and analysis recipes under `environments/` remain frozen
+and require a separate compatibility review before use with untrusted inputs.
+
 ## pip
 
 The existing editable installation remains supported:
