@@ -1,5 +1,10 @@
 # Changelog for the evolutionary package
 
+## 0.17.0 (15.10.2026)
+
+- Add CPU classical image fitness evaluators with documented adaptations, feasibility checks and diagnostics.
+- Add SDXL embedding range tools and output-free notebook templates with bounded execution. Keep private Azure operations and deferred study controllers outside the public source tree.
+
 ## 0.16.0 (12.10.2026)
 
 - BREAKING dependency baseline: update the optional model stack to PyTorch 2.14.1,

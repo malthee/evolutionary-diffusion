@@ -173,3 +173,7 @@ pytest tests -q
 
 See [configuration, behavior and tracing](docs/osga.md) and the reproducible
 [OSGA notebook](notebooks/ga_osga_notebook.ipynb).
+
+## Classical image fitness and embedding ranges
+
+The [classical image fitness evaluators](docs/classical_fitness.md) provide CPU measures with explicit scoring conventions, feasibility checks and diagnostics. The [SDXL range tools](pre-testing/clamp_range/README.md) compare observed token and pooled embedding bounds across pinned prompt datasets. Generated measurements and private study controllers remain local. Running the range tools performs text encoding; installation does not run experiments or change packaged clamp tensors.

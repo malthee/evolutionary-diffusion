@@ -17,3 +17,8 @@ prune build
 prune dist
 prune notebooks/results
 global-exclude __pycache__ *.py[cod] .DS_Store
+
+# Range helpers accompany their templates; generated/private evidence stays local.
+recursive-include pre-testing/clamp_range *.py
+prune pre-testing/clamp_range/results
+prune docs/research

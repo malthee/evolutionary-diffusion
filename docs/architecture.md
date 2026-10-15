@@ -40,6 +40,8 @@ remain ignored for older notebook workflows.
 
 ## Documentation map
 
+- [Classical image fitness](classical_fitness.md): CPU objectives, feasibility and historical adaptation boundaries.
+
 - [Package setup](setup.md): pip/uv, extras and distribution assets.
 - [Sep-CMA](sep_cma.md): reusable optimizer and framework adapter.
 - [Embedding bounds study](embedding_bounds.md): DiffusionDB/Parti results, dataset tables and interpretation.

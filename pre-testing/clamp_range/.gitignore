@@ -1,0 +1,7 @@
+results/parti/embeddings_*.npy
+results/*/selected_prompts.jsonl
+results/logs/
+!results/**/*.png
+
+# Generated measurements stay local; notebooks are public templates.
+/results/

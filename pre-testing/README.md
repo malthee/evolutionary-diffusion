@@ -10,7 +10,7 @@ algorithm examples are in [notebooks](../notebooks/README.md).
 | [detector_evaluation/aide_evaluation.ipynb](detector_evaluation/aide_evaluation.ipynb) | SDXL detector, SSP and official/experimental DIRE comparison |
 | [embedding_analysis/embedding_analysis.ipynb](embedding_analysis/embedding_analysis.ipynb) | Offline projection and embedding viewers; separate analysis environment |
 | [evaluators/mo_evaluation.ipynb](evaluators/mo_evaluation.ipynb) | Multi-objective image metrics, hypervolume and radar charts |
-| `clamp_range/` | Empirical prompt-embedding bounds |
+| [clamp_range/](clamp_range/README.md) | Empirical prompt-embedding bounds, pinned datasets and bounded notebook execution |
 | Existing evaluator and variation notebooks | Individual model and operator probes |
 
 Moved notebook contents and execution guards are retained. Config profiles and
